@@ -10,9 +10,14 @@
   <style>
     :root {
       --bg: #bde0fe;
+      --ground: #95d5b2;
+      --rocket: #ff595e;
       --empty: #ffffff;
       --outline: #1b1b1b;
       --font: "Arial Rounded MT Bold", sans-serif;
+      --rocket-w: min(13vw, 22vh);
+      --ground-h: 8vh;
+      --word-max: 30vh; /* keeps the word clear of the rocket below it */
     }
 
     html, body {
@@ -21,8 +26,6 @@
     }
 
     body {
-      display: grid;
-      place-items: center;
       overflow: hidden;
       background: var(--bg);
       font-family: var(--font);
@@ -30,12 +33,33 @@
       -webkit-user-select: none;
     }
 
+    body.no-rocket {
+      --word-max: 40vh;
+    }
+
+    /* The word lives in the top half; the rocket stands in the bottom-right corner. */
+    #word-area {
+      position: fixed;
+      inset: 0 0 45vh 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .no-rocket #word-area {
+      bottom: 0;
+    }
+
+    .no-rocket #ground,
+    .no-rocket #launch {
+      display: none;
+    }
+
     #word {
       display: flex;
       gap: 0.04em;
       white-space: nowrap;
       /* Shrink the letters so long words still fit across the screen. */
-      font-size: min(calc(92vw / (var(--letters, 8) * 0.78)), 40vh);
+      font-size: min(calc(92vw / (var(--letters, 8) * 0.78)), var(--word-max));
       font-weight: 600;
       line-height: 1.2;
     }
@@ -56,6 +80,90 @@
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-0.12em); }
+    }
+
+    #ground {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      box-sizing: border-box;
+      height: var(--ground-h);
+      background: var(--ground);
+      border-top: 6px solid var(--outline);
+    }
+
+    #launch {
+      position: fixed;
+      right: 6vw;
+      bottom: var(--ground-h);
+      width: var(--rocket-w);
+    }
+
+    #rocket svg {
+      display: block;
+      width: 100%;
+      aspect-ratio: 120 / 219;
+      overflow: visible; /* the flame hangs below the rocket */
+    }
+
+    #pad {
+      height: calc(var(--rocket-w) * 0.1);
+      margin: 0 -12%;
+      background: #adb5bd;
+      border: 6px solid var(--outline);
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .outline {
+      stroke: var(--outline);
+      stroke-width: 5;
+      stroke-linejoin: round;
+    }
+
+    .trim {
+      fill: var(--rocket);
+    }
+
+    .flame {
+      transform-box: fill-box;
+      transform-origin: 50% 0;
+      transform: scale(0);
+    }
+
+    #rocket.lit .flame {
+      transform: none;
+      animation: flicker 0.12s ease-in-out infinite alternate;
+    }
+
+    @keyframes flicker {
+      from { transform: scale(1, 1); }
+      to { transform: scale(0.85, 1.15); }
+    }
+
+    /* Each slice of fuel grows up from the bottom of its spot in the tank. */
+    .fuel {
+      transform-box: fill-box;
+      transform-origin: 50% 100%;
+      transform: scaleY(0);
+      transition: transform 0.4s ease-out;
+    }
+
+    .fuel.full {
+      transform: scaleY(1);
+    }
+
+    .puff {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 50%;
+      margin-left: -25%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: #f8f9fa;
+      opacity: 0;
     }
 
     #confetti {
@@ -89,7 +197,50 @@
   </style>
 </head>
 <body>
-  <div id="word" role="img"></div>
+  <div id="word-area">
+    <div id="word" role="img"></div>
+  </div>
+
+  <div id="ground"></div>
+  <div id="launch">
+    <div id="rocket">
+      <svg viewBox="0 0 120 219" aria-hidden="true">
+        <defs>
+          <path id="body-shape" d="M60 6 C80 24 92 62 92 104 L90 190 Q90 202 78 202 L42 202 Q30 202 30 190 L28 104 C28 62 40 24 60 6 Z" />
+          <rect id="tank" x="44" y="102" width="32" height="76" rx="10" />
+          <clipPath id="body-clip"><use href="#body-shape" /></clipPath>
+          <clipPath id="tank-clip"><use href="#tank" /></clipPath>
+        </defs>
+
+        <g class="flame">
+          <path class="outline" fill="#ff8c42" d="M42 212 C40 240 54 256 60 284 C66 256 80 240 78 212 Z" />
+          <path fill="#ffd23f" d="M50 212 C49 232 57 244 60 262 C63 244 71 232 70 212 Z" />
+        </g>
+
+        <path class="trim outline" d="M34 130 C14 140 8 170 10 216 L36 196 Z" />
+        <path class="trim outline" d="M86 130 C106 140 112 170 110 216 L84 196 Z" />
+        <path class="outline" fill="#adb5bd" d="M46 198 L74 198 L80 216 L40 216 Z" />
+
+        <g clip-path="url(#body-clip)">
+          <rect width="120" height="219" fill="#ffffff" />
+          <rect class="trim" width="120" height="44" />
+          <rect class="trim" y="186" width="120" height="20" />
+          <path class="outline" d="M0 44 H120 M0 186 H120" />
+        </g>
+        <use class="outline" href="#body-shape" fill="none" />
+
+        <circle class="outline" cx="60" cy="70" r="15" fill="#a0e7ff" />
+        <circle cx="55" cy="65" r="4" fill="#ffffff" />
+
+        <use href="#tank" fill="#e9e4f7" />
+        <g id="fuel" clip-path="url(#tank-clip)"></g>
+        <rect x="49" y="110" width="5" height="44" rx="2.5" fill="#ffffff" opacity="0.6" />
+        <use class="outline" href="#tank" fill="none" />
+      </svg>
+    </div>
+    <div id="pad"></div>
+  </div>
+
   <canvas id="confetti"></canvas>
   <button id="fullscreen" title="Full screen" aria-label="Full screen">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

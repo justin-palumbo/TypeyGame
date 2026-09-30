@@ -21,15 +21,18 @@ const CONFIG = {
     letterOutline: "#1b1b1b",
     // One color fills every letter. List several to cycle through them (rainbow!).
     letterFilled: ["#8e44ec"],
+    rocket: "#ff595e", // nose, fins and stripe
+    ground: "#95d5b2",
   },
 
   font: '"Fredoka", "Arial Rounded MT Bold", "Chalkboard SE", "Comic Sans MS", sans-serif',
 
   highlightNextLetter: true, // gently bounce the letter to type next
   wiggleOnMistake: true,     // wiggle that letter when the wrong key is pressed
+  showRocket: true,          // each letter fuels the rocket; a finished word blasts it off
 
   sounds: true,     // chime on each correct letter, fanfare on each finished word
-  sayLetters: true, // speak each letter out loud as it's typed
+  sayLetters: false, // speak each letter out loud as it's typed
   sayWord: true,    // speak the whole word when it's finished
 
   celebrationMs: 2500, // how long the celebration lasts before the next word

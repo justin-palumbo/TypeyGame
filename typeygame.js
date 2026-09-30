@@ -1,7 +1,10 @@
 // Typey Game: a word appears, type it one letter at a time.
+// Each letter adds fuel to the rocket, and a finished word blasts it off.
 // All the settings live in config.js.
 
 (() => {
+  const SVG_NS = "http://www.w3.org/2000/svg";
+
   // C major pentatonic, so any run of chimes sounds pleasant.
   const SCALE = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.51, 1567.98, 1760.0];
 
@@ -9,6 +12,9 @@
   const POP = [{ transform: "scale(1)" }, { transform: "scale(1.25)" }, { transform: "scale(1)" }];
   const HOP = [{ transform: "translateY(0)" }, { transform: "translateY(-0.25em)" }, { transform: "translateY(0)" }];
   const WIGGLE = [0, -12, 12, -8, 8, 0].map((deg) => ({ transform: `rotate(${deg}deg)` }));
+  const SHAKE = [0, -3, 3, -3, 3, -3, 3, 0].map((x) => ({ transform: `translateX(${x}px)` }));
+  const ON_PAD = { transform: "translateY(0)" };
+  const IN_SPACE = { transform: "translateY(-115vh)" }; // far enough up to be off screen
 
   const words = CONFIG.words.map((w) => w.trim().toLowerCase()).filter(Boolean);
   const fillColors = [].concat(CONFIG.colors.letterFilled);
@@ -16,10 +22,15 @@
   const wordEl = document.getElementById("word");
   const canvas = document.getElementById("confetti");
   const fullscreenBtn = document.getElementById("fullscreen");
+  const launchEl = document.getElementById("launch");
+  const rocketEl = document.getElementById("rocket");
+  const tankEl = document.getElementById("tank");
+  const fuelEl = document.getElementById("fuel");
 
   let word = "";
   let pos = 0; // index of the next letter to type
   let letterEls = [];
+  let fuelEls = [];
   let celebrating = false;
   let bag = [];
   let audio = null;
@@ -33,9 +44,12 @@
   function applyTheme() {
     const root = document.documentElement.style;
     root.setProperty("--bg", CONFIG.colors.background);
+    root.setProperty("--ground", CONFIG.colors.ground);
+    root.setProperty("--rocket", CONFIG.colors.rocket);
     root.setProperty("--empty", CONFIG.colors.letterEmpty);
     root.setProperty("--outline", CONFIG.colors.letterOutline);
     root.setProperty("--font", CONFIG.font);
+    document.body.classList.toggle("no-rocket", !CONFIG.showRocket);
   }
 
   // Shuffle-bag: every word appears once before any word repeats.
@@ -74,6 +88,11 @@
     letterEls.forEach((el, i) =>
       el.animate(ENTER, { duration: 350, delay: i * 50, easing: "ease-out", fill: "backwards" }));
     markNext();
+
+    if (CONFIG.showRocket) {
+      emptyTank(w.length);
+      land();
+    }
   }
 
   function markNext() {
@@ -93,8 +112,10 @@
       return;
     }
 
-    el.style.color = fillColors[pos % fillColors.length];
+    const color = fillColors[pos % fillColors.length];
+    el.style.color = color;
     el.animate(POP, { duration: 300, easing: "ease-out" });
+    if (CONFIG.showRocket) addFuel(pos, color);
     chime(SCALE[pos % SCALE.length]);
     pos++;
 
@@ -114,7 +135,80 @@
     confetti();
     letterEls.forEach((el, i) =>
       el.animate(HOP, { duration: 450, delay: i * 70, iterations: 2, easing: "ease-in-out" }));
+    if (CONFIG.showRocket) blastOff();
     setTimeout(() => showWord(pickWord()), CONFIG.celebrationMs);
+  }
+
+  // --- Rocket --------------------------------------------------------------
+
+  // One slice of fuel per letter, stacked from the bottom of the tank up.
+  function emptyTank(slices) {
+    const x = tankEl.x.baseVal.value;
+    const y = tankEl.y.baseVal.value;
+    const width = tankEl.width.baseVal.value;
+    const height = tankEl.height.baseVal.value;
+    const sliceHeight = height / slices;
+
+    fuelEls = Array.from({ length: slices }, (_, i) => {
+      const rect = document.createElementNS(SVG_NS, "rect");
+      rect.setAttribute("class", "fuel");
+      rect.setAttribute("x", x);
+      rect.setAttribute("y", y + height - (i + 1) * sliceHeight);
+      rect.setAttribute("width", width);
+      rect.setAttribute("height", sliceHeight + 1); // overlap the slice below so no seams show
+      return rect;
+    });
+    fuelEl.replaceChildren(...fuelEls);
+  }
+
+  function addFuel(i, color) {
+    fuelEls[i].style.fill = color;
+    fuelEls[i].classList.add("full");
+  }
+
+  // Every new word, the rocket flies back down and lands on the pad.
+  function land() {
+    rocketEl.getAnimations().forEach((a) => a.cancel());
+    rocketEl.classList.add("lit");
+    const landing = rocketEl.animate([IN_SPACE, ON_PAD], {
+      duration: 1200,
+      easing: "cubic-bezier(0.2, 0.8, 0.4, 1)",
+    });
+    landing.onfinish = () => rocketEl.classList.remove("lit");
+  }
+
+  function blastOff() {
+    rocketEl.getAnimations().forEach((a) => a.cancel());
+    rocketEl.classList.add("lit");
+    rumble();
+    puffSmoke();
+    rocketEl.animate(SHAKE, { duration: 600 });
+    rocketEl.animate([ON_PAD, IN_SPACE], {
+      delay: 600,
+      duration: 1600,
+      easing: "cubic-bezier(0.32, 0, 0.67, 0)", // start slow, keep speeding up
+      fill: "forwards",
+    });
+  }
+
+  function puffSmoke() {
+    for (let i = 0; i < 14; i++) {
+      const puff = document.createElement("div");
+      puff.className = "puff";
+      launchEl.append(puff);
+
+      // Alternate sides so the smoke billows out both ways from the pad.
+      const dx = (i % 2 ? 1 : -1) * (40 + Math.random() * 160);
+      const dy = -Math.random() * 80;
+      const billow = puff.animate(
+        [
+          { transform: "translate(0, 0) scale(0.2)", opacity: 0.9 },
+          { transform: `translate(${dx}%, ${dy}%) scale(1.6)`, opacity: 0 },
+        ],
+        { duration: 1400 + Math.random() * 800, delay: Math.random() * 500, easing: "ease-out", fill: "backwards" },
+      );
+      billow.onfinish = () => puff.remove();
+    }
   }
 
   // --- Sound ---------------------------------------------------------------
@@ -145,6 +239,30 @@
     [0, 2, 4, 5, 7].forEach((note, i) => chime(SCALE[note], 0.15 + i * 0.1, 0.5));
   }
 
+  // Rocket engine: filtered white noise that swells, brightens, then fades away.
+  function rumble(length = 2.4) {
+    if (!audio) return;
+    const t = audio.currentTime;
+    const buffer = audio.createBuffer(1, Math.floor(audio.sampleRate * length), audio.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+
+    const noise = audio.createBufferSource();
+    noise.buffer = buffer;
+    const filter = audio.createBiquadFilter();
+    filter.type = "lowpass";
+    // Laptop speakers barely play deep bass, so keep the roar above ~400 Hz.
+    filter.frequency.setValueAtTime(400, t);
+    filter.frequency.exponentialRampToValueAtTime(1500, t + length);
+    const gain = audio.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(2, t + 0.7);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+
+    noise.connect(filter).connect(gain).connect(audio.destination);
+    noise.start(t);
+  }
+
   function say(text) {
     if (!("speechSynthesis" in window)) return;
     speechSynthesis.cancel(); // don't let a fast typist queue up a backlog
@@ -166,9 +284,10 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93", ...fillColors];
+    const box = wordEl.getBoundingClientRect();
     const pieces = Array.from({ length: 160 }, () => ({
-      x: w / 2,
-      y: h / 2,
+      x: box.left + box.width / 2,
+      y: box.top + box.height / 2,
       vx: (Math.random() - 0.5) * 18,
       vy: -4 - Math.random() * 16,
       size: 10 + Math.random() * 12,
