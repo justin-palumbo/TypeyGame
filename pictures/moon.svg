@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <g stroke="#1b1b1b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- a crescent: the part of one circle left after a second one bites into it -->
+    <path fill="#ffe066" d="M49.3 12 A38 38 0 1 0 84.8 65.2 A32 32 0 0 1 49.3 12 Z" />
+    <!-- sleepy eye and smile -->
+    <path fill="none" stroke-width="3.5" d="M24 54 Q29 59 34 54 M33 69 Q38 74 44 68" />
+    <path fill="#ffe066" stroke-width="3" d="M78 18 Q79 25 86 26 Q79 27 78 34 Q77 27 70 26 Q77 25 78 18 Z" />
+  </g>
+</svg>

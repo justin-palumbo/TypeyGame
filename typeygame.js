@@ -33,6 +33,7 @@
   let word = "";
   let pos = 0; // index of the next letter to type
   let letterEls = [];
+  let pictureEl = null;
   let fuelEls = [];
   let celebrating = false;
   let bag = [];
@@ -84,10 +85,13 @@
       span.textContent = CONFIG.letterCase === "lower" ? ch : ch.toUpperCase();
       return span;
     });
+    pictureEl = makePicture(CONFIG.pictures[w]);
     wordEl.style.setProperty("--letters", w.length);
+    wordEl.classList.toggle("has-picture", Boolean(pictureEl));
     wordEl.setAttribute("aria-label", w);
-    wordEl.replaceChildren(...letterEls);
+    wordEl.replaceChildren(...(pictureEl ? [pictureEl] : []), ...letterEls);
 
+    pictureEl?.animate(ENTER, { duration: 350, easing: "ease-out" });
     letterEls.forEach((el, i) =>
       el.animate(ENTER, { duration: 350, delay: i * 50, easing: "ease-out", fill: "backwards" }));
     markNext();
@@ -96,6 +100,21 @@
       emptyTank(w.length);
       land();
     }
+  }
+
+  // A missing or broken image file just leaves the word on its own.
+  function makePicture(src) {
+    if (!src) return null;
+    const img = new Image();
+    img.className = "picture";
+    img.alt = "";
+    img.src = src;
+    img.onerror = () => {
+      if (!img.isConnected) return; // already moved on to another word
+      img.remove();
+      wordEl.classList.remove("has-picture");
+    };
+    return img;
   }
 
   function markNext() {
@@ -136,6 +155,7 @@
     if (CONFIG.sayWord) say(word);
     fanfare();
     confetti();
+    pictureEl?.animate(POP, { duration: 450, iterations: 2, easing: "ease-in-out" });
     letterEls.forEach((el, i) =>
       el.animate(HOP, { duration: 450, delay: i * 70, iterations: 2, easing: "ease-in-out" }));
     if (CONFIG.showRocket) blastOff();

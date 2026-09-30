@@ -61,10 +61,22 @@
       display: flex;
       gap: 0.04em;
       white-space: nowrap;
-      /* Shrink the letters so long words still fit across the screen. */
-      font-size: min(calc(92vw / (var(--letters, 8) * 0.78)), var(--word-max));
+      /* Shrink the letters so long words (and a picture) still fit across the screen. */
+      font-size: min(calc(92vw / (var(--letters, 8) * 0.78 + var(--picture-w, 0))), var(--word-max));
       font-weight: 600;
       line-height: 1.2;
+    }
+
+    #word.has-picture {
+      --picture-w: 1.1; /* the picture's width plus its margin, in em */
+    }
+
+    .picture {
+      align-self: center;
+      width: 0.8em;
+      height: 0.8em;
+      margin-right: 0.26em;
+      object-fit: contain;
     }
 
     .letter {

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <g stroke="#1b1b1b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- pointy ears, tucked behind the head -->
+    <path fill="#f4a261" d="M24 46 L25 12 L46 32 Z M76 46 L75 12 L54 32 Z" />
+    <path fill="#ffb4a2" stroke="none" d="M29 36 L28.5 21 L39 30 Z M71 36 L71.5 21 L61 30 Z" />
+    <ellipse cx="50" cy="58" rx="32" ry="28" fill="#f4a261" />
+    <!-- tabby stripes -->
+    <path fill="none" stroke="#e76f51" stroke-width="3.5" d="M50 34 V42 M41 35 L43 42 M59 35 L57 42" />
+    <ellipse cx="38" cy="54" rx="4.5" ry="6" fill="#1b1b1b" stroke="none" />
+    <ellipse cx="62" cy="54" rx="4.5" ry="6" fill="#1b1b1b" stroke="none" />
+    <circle cx="39.5" cy="51.5" r="1.5" fill="#ffffff" stroke="none" />
+    <circle cx="63.5" cy="51.5" r="1.5" fill="#ffffff" stroke="none" />
+    <path fill="#ff8fab" stroke-width="3" d="M46 63 H54 L50 68 Z" />
+    <path fill="none" stroke-width="3" d="M50 68 C49 73 44 74 42 71 M50 68 C51 73 56 74 58 71" />
+    <!-- whiskers -->
+    <path fill="none" stroke-width="2.5" d="M30 64 L8 60 M30 69 L8 71 M70 64 L92 60 M70 69 L92 71" />
+  </g>
+</svg>

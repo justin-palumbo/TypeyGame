@@ -1,16 +1,27 @@
 // Everything a grown-up might want to tweak lives here.
 // A future settings screen can read and overwrite these values.
 const CONFIG = {
-  // Words to type, roughly eight letters each. Shown one at a time in random order.
+  // Words to type, shown one at a time in random order.
   words: [
-    "elephant", "dinosaur", "airplane", "kangaroo", "flamingo",
-    "hedgehog", "squirrel", "starfish", "sunshine", "mushroom",
-    "sandwich", "pancakes", "backpack", "football", "lollipop",
-    "rainbow", "giraffe", "penguin", "dolphin", "octopus",
-    "pumpkin", "tractor", "cupcake", "snowman", "unicorn",
-    "popcorn", "ladybug", "bulldozer", "firetruck", "blueberry",
-    "butterfly", "excavator",
+    "dog",
+    "cat",
+    "sun",
+    "banana",
+    "hat",
+    "moon",
+    "matteo"
   ],
+
+  // A picture shown beside a word while it's typed. Any image file works, even a photo.
+  // Words without one here just show the word.
+  pictures: {
+    dog: "pictures/dog.svg",
+    cat: "pictures/cat.svg",
+    sun: "pictures/sun.svg",
+    banana: "pictures/banana.svg",
+    hat: "pictures/hat.svg",
+    moon: "pictures/moon.svg",
+  },
 
   // "upper" matches the letters printed on the keyboard; "lower" matches storybooks.
   letterCase: "upper",

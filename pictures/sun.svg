@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <path id="rays" d="M85 50 H93 M74.7 74.7 L80.4 80.4 M50 85 V93 M25.3 74.7 L19.6 80.4 M15 50 H7 M25.3 25.3 L19.6 19.6 M50 15 V7 M74.7 25.3 L80.4 19.6" />
+  </defs>
+  <!-- rays drawn thick in the outline color, then thinner in orange on top, so each gets an outline -->
+  <use href="#rays" fill="none" stroke="#1b1b1b" stroke-width="11" stroke-linecap="round" />
+  <use href="#rays" fill="none" stroke="#ff9f1c" stroke-width="7" stroke-linecap="round" />
+  <g stroke="#1b1b1b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="50" cy="50" r="26" fill="#ffd23f" />
+    <circle cx="36" cy="56" r="4" fill="#ff8fab" opacity="0.6" stroke="none" />
+    <circle cx="64" cy="56" r="4" fill="#ff8fab" opacity="0.6" stroke="none" />
+    <ellipse cx="41" cy="46" rx="3" ry="4" fill="#1b1b1b" stroke="none" />
+    <ellipse cx="59" cy="46" rx="3" ry="4" fill="#1b1b1b" stroke="none" />
+    <path fill="none" stroke-width="3.5" d="M40 57 Q50 66 60 57" />
+  </g>
+</svg>
