@@ -21,6 +21,7 @@ const CONFIG = {
     banana: "pictures/banana.svg",
     hat: "pictures/hat.svg",
     moon: "pictures/moon.svg",
+    matteo: "pictures/matteo.svg",
   },
 
   // "upper" matches the letters printed on the keyboard; "lower" matches storybooks.
