@@ -16,14 +16,21 @@ const CONFIG = {
   letterCase: "upper",
 
   colors: {
-    background: "#bde0fe",
     letterEmpty: "#ffffff",
     letterOutline: "#1b1b1b",
     // One color fills every letter. List several to cycle through them (rainbow!).
     letterFilled: ["#8e44ec"],
     rocket: "#ff595e", // nose, fins and stripe
-    ground: "#95d5b2",
   },
+
+  // Each finished word moves on to the next scene, looping back to the first.
+  // `backdrop` floats far off in the sky: "moon", "earth" or "saturn".
+  // `craters` is the crater color; leave it (or `stars`, `clouds`, `backdrop`) out for plain ground or sky.
+  scenes: [
+    { name: "earth", sky: "#bde0fe", ground: "#95d5b2", clouds: true, backdrop: "moon" },
+    { name: "moon", sky: "#0b1633", ground: "#c9c9d1", craters: "#9d9daa", stars: true, backdrop: "earth" },
+    { name: "mars", sky: "#2b1030", ground: "#d9622b", craters: "#a8461c", stars: true, backdrop: "saturn" },
+  ],
 
   font: '"Fredoka", "Arial Rounded MT Bold", "Chalkboard SE", "Comic Sans MS", sans-serif',
 

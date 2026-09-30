@@ -9,8 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #bde0fe;
+      --sky: #bde0fe;
       --ground: #95d5b2;
+      --crater: transparent;
+      --scene-fade: 1s;
       --rocket: #ff595e;
       --empty: #ffffff;
       --outline: #1b1b1b;
@@ -27,7 +29,8 @@
 
     body {
       overflow: hidden;
-      background: var(--bg);
+      background: var(--sky);
+      transition: background-color var(--scene-fade);
       font-family: var(--font);
       user-select: none;
       -webkit-user-select: none;
@@ -82,6 +85,66 @@
       50% { transform: translateY(-0.12em); }
     }
 
+    /* Scenes: the sky, stars, ground and craters all fade from one scene to the next. */
+    #stars {
+      position: fixed;
+      inset: 0;
+      opacity: 0;
+      transition: opacity var(--scene-fade);
+    }
+
+    .starry #stars {
+      opacity: 1;
+    }
+
+    .star {
+      position: absolute;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: #ffffff;
+      animation: twinkle ease-in-out infinite alternate;
+    }
+
+    @keyframes twinkle {
+      to { opacity: 0.3; }
+    }
+
+    /* Something far off in the sky, low on the left where neither the word nor the rocket is. */
+    .backdrop {
+      position: fixed;
+      left: 8vw;
+      bottom: calc(var(--ground-h) + 8vh);
+      height: 16vh;
+      aspect-ratio: 1;
+      opacity: 0;
+      transition: opacity var(--scene-fade);
+    }
+
+    .backdrop[data-name="saturn"] {
+      height: 14vh;
+      aspect-ratio: 176 / 80;
+    }
+
+    .backdrop.shown {
+      opacity: 1;
+    }
+
+    .cloud {
+      position: fixed;
+      aspect-ratio: 140 / 82;
+      opacity: 0;
+      transition: opacity var(--scene-fade);
+      animation: drift ease-in-out infinite alternate;
+    }
+
+    .cloudy .cloud {
+      opacity: 1;
+    }
+
+    @keyframes drift {
+      to { translate: 4vw 0; }
+    }
+
     #ground {
       position: fixed;
       left: 0;
@@ -89,8 +152,24 @@
       bottom: 0;
       box-sizing: border-box;
       height: var(--ground-h);
+      overflow: hidden;
       background: var(--ground);
       border-top: 6px solid var(--outline);
+      transition: background-color var(--scene-fade);
+    }
+
+    .crater {
+      position: absolute;
+      aspect-ratio: 3;
+      border-radius: 50%;
+      background: var(--crater);
+      box-shadow: inset 0 0.5vw 0 rgba(0, 0, 0, 0.2); /* a shadowed rim makes it look dug in */
+      opacity: 0;
+      transition: opacity var(--scene-fade), background-color var(--scene-fade);
+    }
+
+    .cratered .crater {
+      opacity: 1;
     }
 
     #launch {
@@ -197,11 +276,86 @@
   </style>
 </head>
 <body>
+  <div id="stars" aria-hidden="true"></div>
+
+  <!-- Far-off things in the sky; each scene's `backdrop` in config.js picks one. -->
+  <svg class="backdrop" data-name="moon" viewBox="0 0 100 100" aria-hidden="true">
+    <circle class="outline" cx="50" cy="50" r="44" fill="#f8f9fa" />
+    <circle cx="34" cy="36" r="9" fill="#dee2e6" />
+    <circle cx="64" cy="30" r="6" fill="#dee2e6" />
+    <circle cx="60" cy="62" r="12" fill="#dee2e6" />
+    <circle cx="30" cy="64" r="5" fill="#dee2e6" />
+  </svg>
+
+  <svg class="backdrop" data-name="earth" viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+      <clipPath id="earth-clip"><circle cx="50" cy="50" r="44" /></clipPath>
+    </defs>
+    <g clip-path="url(#earth-clip)">
+      <rect width="100" height="100" fill="#4dabf7" />
+      <path fill="#69db7c" d="M16 32 C24 18 42 20 44 32 C46 42 36 46 38 56 C40 66 28 72 22 62 C16 52 10 42 16 32 Z" />
+      <path fill="#69db7c" d="M58 12 C72 10 86 22 82 36 C80 44 70 40 66 50 C62 56 54 50 54 42 C54 32 48 16 58 12 Z" />
+      <path fill="#69db7c" d="M58 72 C66 64 80 66 82 76 C84 86 70 94 60 90 C52 86 52 78 58 72 Z" />
+      <path d="M18 76 H38 M62 56 H80" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.8" />
+    </g>
+    <circle class="outline" cx="50" cy="50" r="44" fill="none" />
+  </svg>
+
+  <svg class="backdrop" data-name="saturn" viewBox="12 20 176 80" aria-hidden="true">
+    <defs>
+      <path id="rings" fill-rule="evenodd" d="M14 60 A86 24 0 0 0 186 60 A86 24 0 0 0 14 60 Z M42 60 A58 12 0 0 0 158 60 A58 12 0 0 0 42 60 Z" />
+      <clipPath id="saturn-clip"><circle cx="100" cy="60" r="34" /></clipPath>
+      <clipPath id="rings-behind"><rect width="200" height="60" /></clipPath>
+      <clipPath id="rings-in-front"><rect y="60" width="200" height="60" /></clipPath>
+    </defs>
+    <!-- The rings' top half passes behind the planet and the bottom half in front. -->
+    <g transform="rotate(-18 100 60)">
+      <use class="outline" href="#rings" fill="#d4a373" clip-path="url(#rings-behind)" />
+      <g clip-path="url(#saturn-clip)">
+        <rect width="200" height="120" fill="#f4d58d" />
+        <rect y="44" width="200" height="7" fill="#e9b872" />
+        <rect y="64" width="200" height="9" fill="#e9b872" />
+      </g>
+      <circle class="outline" cx="100" cy="60" r="34" fill="none" />
+      <use class="outline" href="#rings" fill="#d4a373" clip-path="url(#rings-in-front)" />
+    </g>
+  </svg>
+
+  <!-- Clouds for scenes with `clouds`. Each is its puffs drawn twice: a thick outline,
+       then plain white on top to hide where the puffs overlap. -->
+  <svg class="cloud" viewBox="10 0 140 82" aria-hidden="true"
+       style="top: 5vh; left: 3vw; height: 11vh; animation-duration: 9s">
+    <defs>
+      <g id="cloud-puffs" fill="#ffffff">
+        <circle cx="40" cy="52" r="22" />
+        <circle cx="70" cy="36" r="28" />
+        <circle cx="104" cy="40" r="24" />
+        <circle cx="126" cy="54" r="18" />
+        <rect x="30" y="48" width="100" height="26" rx="13" />
+      </g>
+    </defs>
+    <use class="outline" href="#cloud-puffs" style="stroke-width: 10" />
+    <use href="#cloud-puffs" />
+  </svg>
+  <svg class="cloud" viewBox="10 0 140 82" aria-hidden="true"
+       style="left: 42vw; bottom: calc(var(--ground-h) + 18vh); height: 9vh; scale: -1 1; animation-duration: 12s; animation-delay: -4s">
+    <use class="outline" href="#cloud-puffs" style="stroke-width: 10" />
+    <use href="#cloud-puffs" />
+  </svg>
+
   <div id="word-area">
     <div id="word" role="img"></div>
   </div>
 
-  <div id="ground"></div>
+  <!-- Craters stay clear of the right side, where the launch pad sits. -->
+  <div id="ground">
+    <div class="crater" style="left: 3%; top: 25%; width: 8vw"></div>
+    <div class="crater" style="left: 16%; top: 55%; width: 4vw"></div>
+    <div class="crater" style="left: 26%; top: 35%; width: 10vw"></div>
+    <div class="crater" style="left: 43%; top: 20%; width: 5vw"></div>
+    <div class="crater" style="left: 54%; top: 50%; width: 7vw"></div>
+    <div class="crater" style="left: 67%; top: 25%; width: 4vw"></div>
+  </div>
   <div id="launch">
     <div id="rocket">
       <svg viewBox="0 0 120 219" aria-hidden="true">

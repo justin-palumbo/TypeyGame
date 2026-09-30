@@ -1,5 +1,5 @@
 // Typey Game: a word appears, type it one letter at a time.
-// Each letter adds fuel to the rocket, and a finished word blasts it off.
+// Each letter adds fuel to the rocket, and a finished word blasts it off to the next scene.
 // All the settings live in config.js.
 
 (() => {
@@ -26,7 +26,10 @@
   const rocketEl = document.getElementById("rocket");
   const tankEl = document.getElementById("tank");
   const fuelEl = document.getElementById("fuel");
+  const starsEl = document.getElementById("stars");
+  const backdropEls = document.querySelectorAll(".backdrop");
 
+  let scene = 0; // index into CONFIG.scenes
   let word = "";
   let pos = 0; // index of the next letter to type
   let letterEls = [];
@@ -36,6 +39,8 @@
   let audio = null;
 
   applyTheme();
+  scatterStars();
+  showScene();
   showWord(pickWord());
 
   window.addEventListener("keydown", onKey);
@@ -43,8 +48,6 @@
 
   function applyTheme() {
     const root = document.documentElement.style;
-    root.setProperty("--bg", CONFIG.colors.background);
-    root.setProperty("--ground", CONFIG.colors.ground);
     root.setProperty("--rocket", CONFIG.colors.rocket);
     root.setProperty("--empty", CONFIG.colors.letterEmpty);
     root.setProperty("--outline", CONFIG.colors.letterOutline);
@@ -136,7 +139,41 @@
     letterEls.forEach((el, i) =>
       el.animate(HOP, { duration: 450, delay: i * 70, iterations: 2, easing: "ease-in-out" }));
     if (CONFIG.showRocket) blastOff();
-    setTimeout(() => showWord(pickWord()), CONFIG.celebrationMs);
+    setTimeout(() => {
+      // Change scenes while the rocket is off screen, so it lands somewhere new.
+      scene = (scene + 1) % CONFIG.scenes.length;
+      showScene();
+      showWord(pickWord());
+    }, CONFIG.celebrationMs);
+  }
+
+  // --- Scenes --------------------------------------------------------------
+
+  function scatterStars(count = 100) {
+    const stars = Array.from({ length: count }, () => {
+      const star = document.createElement("div");
+      star.className = "star";
+      star.style.left = `${Math.random() * 100}%`;
+      star.style.top = `${Math.random() * 100}%`;
+      star.style.width = `${2 + Math.random() ** 3 * 6}px`; // mostly tiny, a few big ones
+      star.style.animationDuration = `${1.5 + Math.random() * 2}s`;
+      star.style.animationDelay = `${-Math.random() * 3}s`; // so they don't twinkle in step
+      return star;
+    });
+    starsEl.replaceChildren(...stars);
+  }
+
+  function showScene() {
+    const { sky, ground, craters, stars, clouds, backdrop } = CONFIG.scenes[scene];
+    const root = document.documentElement.style;
+    root.setProperty("--sky", sky);
+    root.setProperty("--ground", ground);
+    // Keep the old crater color when leaving a cratered scene, so they fade out in it.
+    if (craters) root.setProperty("--crater", craters);
+    document.body.classList.toggle("cratered", Boolean(craters));
+    document.body.classList.toggle("starry", Boolean(stars));
+    document.body.classList.toggle("cloudy", Boolean(clouds));
+    backdropEls.forEach((el) => el.classList.toggle("shown", el.dataset.name === backdrop));
   }
 
   // --- Rocket --------------------------------------------------------------
