@@ -38,6 +38,7 @@
   let celebrating = false;
   let bag = [];
   let audio = null;
+  let uhOhUntil = 0; // audio time when the current "uh-oh" finishes
 
   applyTheme();
   scatterStars();
@@ -131,6 +132,7 @@
     const el = letterEls[pos];
     if (e.key.toLowerCase() !== word[pos]) {
       if (CONFIG.wiggleOnMistake) el.animate(WIGGLE, { duration: 400 });
+      if (CONFIG.soundOnMistake) uhOh();
       return;
     }
 
@@ -294,6 +296,15 @@
 
   function fanfare() {
     [0, 2, 4, 5, 7].forEach((note, i) => chime(SCALE[note], 0.15 + i * 0.1, 0.5));
+  }
+
+  // A gentle "uh-oh": two low notes stepping down. Only one plays at a time,
+  // so a toddler mashing several keys at once doesn't make a din.
+  function uhOh() {
+    if (!audio || audio.currentTime < uhOhUntil) return;
+    chime(392, 0, 0.15);
+    chime(330, 0.14, 0.3);
+    uhOhUntil = audio.currentTime + 0.44;
   }
 
   // Rocket engine: filtered white noise that swells, brightens, then fades away.

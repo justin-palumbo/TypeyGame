@@ -50,6 +50,7 @@ const CONFIG = {
   showRocket: true,          // each letter fuels the rocket; a finished word blasts it off
 
   sounds: true,     // chime on each correct letter, fanfare on each finished word
+  soundOnMistake: true, // a soft "uh-oh" when the wrong key is pressed
   sayLetters: false, // speak each letter out loud as it's typed
   sayWord: true,    // speak the whole word when it's finished
 
