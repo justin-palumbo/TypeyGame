@@ -1,5 +1,5 @@
 // Typey Game: a word appears, type it one letter at a time.
-// Each letter adds fuel to the rocket, and a finished word blasts it off to the next scene.
+// Each letter adds fuel to a craft (a rocket, plane, UFO...), and a finished word flies it off to the next scene.
 // All the settings live in config.js.
 
 (() => {
@@ -13,8 +13,110 @@
   const HOP = [{ transform: "translateY(0)" }, { transform: "translateY(-0.25em)" }, { transform: "translateY(0)" }];
   const WIGGLE = [0, -12, 12, -8, 8, 0].map((deg) => ({ transform: `rotate(${deg}deg)` }));
   const SHAKE = [0, -3, 3, -3, 3, -3, 3, 0].map((x) => ({ transform: `translateX(${x}px)` }));
-  const ON_PAD = { transform: "translateY(0)" };
-  const IN_SPACE = { transform: "translateY(-115vh)" }; // far enough up to be off screen
+  const SWAY = [0, -6, 6, -6, 6, 0].map((deg) => ({ transform: `rotate(${deg}deg)` }));
+
+  // Where the craft is, relative to sitting on the pad, and how it's tipped.
+  const at = (x, y, more) => ({ transform: `translate(${x}, ${y})`, ...more });
+  const tilt = (deg, more) => ({ transform: `rotate(${deg}deg)`, ...more });
+  const ON_PAD = at(0, 0);
+  const IN_SPACE = at(0, "-115vh"); // far enough up to be off screen
+  const SOFT = "cubic-bezier(0.2, 0.8, 0.4, 1)"; // fast, then gently settling
+  const SPEED_UP = "cubic-bezier(0.32, 0, 0.67, 0)"; // start slow, keep speeding up
+  const TAKEOFF_MS = 2200; // every takeoff is off screen before the next word arrives
+
+  // How each craft lands and takes off. Both return the animation that moves #craft;
+  // tilts and wobbles go on the ship itself, so the two combine.
+  // Left-facing craft (plane, helicopter, blimp) tip their nose up with a positive tilt.
+  const FLIGHTS = {
+    rocket: {
+      land: () => fly([{ ...IN_SPACE, easing: SOFT }, ON_PAD], 1200),
+      takeOff: () => {
+        rumble();
+        puffSmoke();
+        ship.animate(SHAKE, { duration: 600 });
+        return fly([ON_PAD, { ...ON_PAD, offset: 0.27, easing: SPEED_UP }, IN_SPACE]);
+      },
+    },
+    ufo: {
+      land: () => {
+        ship.animate(SWAY, { duration: 600, iterations: 2 });
+        return fly([{ ...IN_SPACE, easing: SOFT }, ON_PAD], 1200);
+      },
+      // Hop up, hover a moment, then zoom away.
+      takeOff: () => {
+        warble();
+        ship.animate(SWAY, { duration: 550, iterations: 4 });
+        return fly([
+          { ...ON_PAD, easing: "ease-out" },
+          at(0, "-10vh", { offset: 0.3 }),
+          at(0, "-12vh", { offset: 0.55, easing: "cubic-bezier(0.6, 0, 1, 0.4)" }),
+          IN_SPACE,
+        ]);
+      },
+    },
+    // Glide in nose-down, flare up at touchdown, and roll to a stop.
+    airplane: {
+      land: () => {
+        ship.animate([tilt(-8), tilt(-8, { offset: 0.6 }), tilt(4, { offset: 0.78 }), tilt(0)], { duration: 1600 });
+        return fly([at("60vw", "-45vh"), at("8vw", 0, { offset: 0.75, easing: "ease-out" }), ON_PAD], 1600);
+      },
+      // Roll down the runway, then pull up and climb away.
+      takeOff: () => {
+        chop(TAKEOFF_MS / 1000, 28);
+        ship.animate([tilt(0), tilt(0, { offset: 0.4 }), tilt(14, { offset: 0.6 }), tilt(14)], { duration: TAKEOFF_MS });
+        return fly([{ ...ON_PAD, easing: "ease-in" }, at("-25vw", 0, { offset: 0.45 }), at("-110vw", "-80vh")]);
+      },
+    },
+    // Drop straight down, slowing for a gentle touchdown.
+    helicopter: {
+      land: () => {
+        ship.animate([tilt(0), tilt(-4), tilt(3), tilt(0)], { duration: 1600 });
+        return fly([{ ...IN_SPACE, easing: "ease-out" }, at(0, "-8vh", { offset: 0.7, easing: "ease-in-out" }), ON_PAD], 1600);
+      },
+      // Lift straight up, then tip forward and fly off.
+      takeOff: () => {
+        chop(TAKEOFF_MS / 1000, 11);
+        ship.animate([tilt(0), tilt(0, { offset: 0.35 }), tilt(-12, { offset: 0.55 }), tilt(-12)], { duration: TAKEOFF_MS });
+        return fly([{ ...ON_PAD, easing: "ease-in-out" }, at(0, "-14vh", { offset: 0.4, easing: "ease-in" }), at("-70vw", "-115vh")]);
+      },
+    },
+    // Float gently down, swaying in the breeze.
+    balloon: {
+      land: () => {
+        ship.animate([tilt(0), tilt(3), tilt(-3), tilt(0)], { duration: 1600 });
+        return fly([{ ...IN_SPACE, easing: SOFT }, ON_PAD], 1600);
+      },
+      // A blast of the burner, then a slow rise that picks up speed.
+      takeOff: () => {
+        rumble(1.4, 500, 1200);
+        ship.animate([tilt(0), tilt(2), tilt(-2), tilt(2), tilt(0)], { duration: TAKEOFF_MS });
+        return fly([{ ...ON_PAD, easing: "ease-in" }, at(0, "-6vh", { offset: 0.35, easing: "ease-in" }), IN_SPACE]);
+      },
+    },
+    // Drift down from the sky, leveling off as it lands.
+    blimp: {
+      land: () => {
+        ship.animate([tilt(-5), tilt(0)], { duration: 1600 });
+        return fly([{ ...at("40vw", "-60vh"), easing: SOFT }, ON_PAD], 1600);
+      },
+      // Float up nose-first and putter away.
+      takeOff: () => {
+        chop(TAKEOFF_MS / 1000, 18);
+        ship.animate([tilt(0), tilt(6, { offset: 0.35 }), tilt(6)], { duration: TAKEOFF_MS });
+        return fly([{ ...ON_PAD, easing: "ease-in" }, at("-4vw", "-8vh", { offset: 0.35, easing: "ease-in" }), at("-50vw", "-115vh")]);
+      },
+    },
+    // Slow down, hover just above the ground, then set down.
+    lander: {
+      land: () => fly([{ ...IN_SPACE, easing: "ease-out" }, at(0, "-6vh", { offset: 0.7, easing: "ease-in-out" }), ON_PAD], 1600),
+      // No smoke: there's no air on the moon.
+      takeOff: () => {
+        rumble(TAKEOFF_MS / 1000, 500, 1300);
+        ship.animate(SHAKE, { duration: 400 });
+        return fly([ON_PAD, { ...ON_PAD, offset: 0.18, easing: SPEED_UP }, IN_SPACE]);
+      },
+    },
+  };
 
   const words = CONFIG.words.map((w) => w.trim().toLowerCase()).filter(Boolean);
   const fillColors = [].concat(CONFIG.colors.letterFilled);
@@ -23,13 +125,13 @@
   const canvas = document.getElementById("confetti");
   const fullscreenBtn = document.getElementById("fullscreen");
   const launchEl = document.getElementById("launch");
-  const rocketEl = document.getElementById("rocket");
-  const tankEl = document.getElementById("tank");
-  const fuelEl = document.getElementById("fuel");
+  const craftEl = document.getElementById("craft");
+  const shipEls = [...document.querySelectorAll(".ship")];
   const starsEl = document.getElementById("stars");
   const backdropEls = document.querySelectorAll(".backdrop");
 
   let scene = 0; // index into CONFIG.scenes
+  let ship = shipEls[0]; // the craft this scene uses
   let word = "";
   let pos = 0; // index of the next letter to type
   let letterEls = [];
@@ -41,6 +143,7 @@
   let uhOhUntil = 0; // audio time when the current "uh-oh" finishes
 
   applyTheme();
+  sizeShips();
   scatterStars();
   showScene();
   showWord(pickWord());
@@ -162,7 +265,7 @@
       el.animate(HOP, { duration: 450, delay: i * 70, iterations: 2, easing: "ease-in-out" }));
     if (CONFIG.showRocket) blastOff();
     setTimeout(() => {
-      // Change scenes while the rocket is off screen, so it lands somewhere new.
+      // Change scenes while the craft is off screen, so it lands somewhere new.
       scene = (scene + 1) % CONFIG.scenes.length;
       showScene();
       showWord(pickWord());
@@ -186,7 +289,7 @@
   }
 
   function showScene() {
-    const { sky, ground, craters, stars, clouds, backdrop } = CONFIG.scenes[scene];
+    const { sky, ground, craters, stars, clouds, backdrop, craft = "rocket" } = CONFIG.scenes[scene];
     const root = document.documentElement.style;
     root.setProperty("--sky", sky);
     root.setProperty("--ground", ground);
@@ -196,12 +299,28 @@
     document.body.classList.toggle("starry", Boolean(stars));
     document.body.classList.toggle("cloudy", Boolean(clouds));
     backdropEls.forEach((el) => el.classList.toggle("shown", el.dataset.name === backdrop));
+    const choices = [].concat(craft);
+    const pick = choices[Math.floor(Math.random() * choices.length)];
+    ship = shipEls.find((el) => el.dataset.name === pick) || shipEls[0];
+    shipEls.forEach((el) => el.classList.toggle("shown", el === ship));
   }
 
-  // --- Rocket --------------------------------------------------------------
+  // --- Craft ---------------------------------------------------------------
+
+  // Draw every craft at the rocket's scale, centered over the pad, so their outlines match.
+  function sizeShips() {
+    const padWidth = shipEls[0].viewBox.baseVal.width; // the rocket, which comes first
+    shipEls.forEach((el) => {
+      const { width, height } = el.viewBox.baseVal;
+      el.style.width = `${(width / padWidth) * 100}%`;
+      el.style.marginLeft = `${(1 - width / padWidth) * 50}%`;
+      el.style.aspectRatio = `${width} / ${height}`;
+    });
+  }
 
   // One slice of fuel per letter, stacked from the bottom of the tank up.
   function emptyTank(slices) {
+    const tankEl = ship.querySelector("[data-tank]");
     const x = tankEl.x.baseVal.value;
     const y = tankEl.y.baseVal.value;
     const width = tankEl.width.baseVal.value;
@@ -217,7 +336,7 @@
       rect.setAttribute("height", sliceHeight + 1); // overlap the slice below so no seams show
       return rect;
     });
-    fuelEl.replaceChildren(...fuelEls);
+    ship.querySelector("[data-fuel]").replaceChildren(...fuelEls);
   }
 
   function addFuel(i, color) {
@@ -225,29 +344,29 @@
     fuelEls[i].classList.add("full");
   }
 
-  // Every new word, the rocket flies back down and lands on the pad.
+  // Stop any flight in progress, including tilts on the ship itself.
+  function stopFlying() {
+    [craftEl, ship].forEach((el) => el.getAnimations().forEach((a) => a.cancel()));
+  }
+
+  // Moves the whole craft, and stays where it ends: after a takeoff, that's off screen.
+  function fly(keyframes, duration = TAKEOFF_MS) {
+    return craftEl.animate(keyframes, { duration, fill: "forwards" });
+  }
+
+  // Every new word, the craft flies back in and lands on the pad. While it's
+  // "lit", its flame, beam or propellers are going.
   function land() {
-    rocketEl.getAnimations().forEach((a) => a.cancel());
-    rocketEl.classList.add("lit");
-    const landing = rocketEl.animate([IN_SPACE, ON_PAD], {
-      duration: 1200,
-      easing: "cubic-bezier(0.2, 0.8, 0.4, 1)",
-    });
-    landing.onfinish = () => rocketEl.classList.remove("lit");
+    stopFlying();
+    craftEl.classList.add("lit");
+    const landing = FLIGHTS[ship.dataset.name].land();
+    landing.onfinish = () => craftEl.classList.remove("lit");
   }
 
   function blastOff() {
-    rocketEl.getAnimations().forEach((a) => a.cancel());
-    rocketEl.classList.add("lit");
-    rumble();
-    puffSmoke();
-    rocketEl.animate(SHAKE, { duration: 600 });
-    rocketEl.animate([ON_PAD, IN_SPACE], {
-      delay: 600,
-      duration: 1600,
-      easing: "cubic-bezier(0.32, 0, 0.67, 0)", // start slow, keep speeding up
-      fill: "forwards",
-    });
+    stopFlying();
+    craftEl.classList.add("lit");
+    FLIGHTS[ship.dataset.name].takeOff();
   }
 
   function puffSmoke() {
@@ -307,28 +426,93 @@
     uhOhUntil = audio.currentTime + 0.44;
   }
 
-  // Rocket engine: filtered white noise that swells, brightens, then fades away.
-  function rumble(length = 2.4) {
+  // UFO engine: a wobbly "woo-woo-woo" that rises as it flies away.
+  function warble(length = 2.2) {
     if (!audio) return;
     const t = audio.currentTime;
-    const buffer = audio.createBuffer(1, Math.floor(audio.sampleRate * length), audio.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const osc = audio.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(500, t);
+    osc.frequency.exponentialRampToValueAtTime(1400, t + length);
 
-    const noise = audio.createBufferSource();
-    noise.buffer = buffer;
+    // A slow second oscillator bends the pitch up and down for the wobble.
+    const wobble = audio.createOscillator();
+    wobble.frequency.value = 7;
+    const depth = audio.createGain();
+    depth.gain.value = 80;
+    wobble.connect(depth).connect(osc.frequency);
+
+    const gain = audio.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.2, t + 0.2);
+    gain.gain.setValueAtTime(0.2, t + length - 0.6);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+
+    osc.connect(gain).connect(audio.destination);
+    [osc, wobble].forEach((o) => {
+      o.start(t);
+      o.stop(t + length);
+    });
+  }
+
+  // Engine roar (rockets, the lander, the balloon's burner): filtered white noise
+  // that swells, brightens from `from` to `to` Hz, then fades away.
+  function rumble(length = 2.4, from = 400, to = 1500) {
+    if (!audio) return;
+    const t = audio.currentTime;
+    const source = noise(length);
     const filter = audio.createBiquadFilter();
     filter.type = "lowpass";
     // Laptop speakers barely play deep bass, so keep the roar above ~400 Hz.
-    filter.frequency.setValueAtTime(400, t);
-    filter.frequency.exponentialRampToValueAtTime(1500, t + length);
+    filter.frequency.setValueAtTime(from, t);
+    filter.frequency.exponentialRampToValueAtTime(to, t + length);
+
+    source.connect(filter).connect(swell(t, length, 2)).connect(audio.destination);
+    source.start(t);
+  }
+
+  // Propellers and rotors: engine noise chopped into pulses, `rate` a second and speeding up.
+  function chop(length, rate) {
+    if (!audio) return;
+    const t = audio.currentTime;
+    const source = noise(length);
+    const filter = audio.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 1000;
+
+    // A square wave flips the volume between 0 and 1.
+    const pulse = audio.createGain();
+    pulse.gain.value = 0.5;
+    const flipper = audio.createOscillator();
+    flipper.type = "square";
+    flipper.frequency.setValueAtTime(rate, t);
+    flipper.frequency.linearRampToValueAtTime(rate * 1.5, t + length);
+    const depth = audio.createGain();
+    depth.gain.value = 0.5;
+    flipper.connect(depth).connect(pulse.gain);
+
+    source.connect(filter).connect(pulse).connect(swell(t, length, 2.5)).connect(audio.destination);
+    source.start(t);
+    flipper.start(t);
+    flipper.stop(t + length);
+  }
+
+  function noise(length) {
+    const buffer = audio.createBuffer(1, Math.floor(audio.sampleRate * length), audio.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const source = audio.createBufferSource();
+    source.buffer = buffer;
+    return source;
+  }
+
+  // A volume that swells up to `peak`, then fades away by the end.
+  function swell(t, length, peak) {
     const gain = audio.createGain();
     gain.gain.setValueAtTime(0.0001, t);
-    gain.gain.exponentialRampToValueAtTime(2, t + 0.7);
+    gain.gain.exponentialRampToValueAtTime(peak, t + length * 0.3);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
-
-    noise.connect(filter).connect(gain).connect(audio.destination);
-    noise.start(t);
+    return gain;
   }
 
   function say(text) {

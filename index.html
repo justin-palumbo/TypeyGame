@@ -191,11 +191,14 @@
       width: var(--rocket-w);
     }
 
-    #rocket svg {
+    /* One craft at a time, picked by the scene. typeygame.js sizes each one to match the rocket. */
+    .ship {
+      display: none;
+      overflow: visible; /* flames and beams hang outside the craft */
+    }
+
+    .ship.shown {
       display: block;
-      width: 100%;
-      aspect-ratio: 120 / 219;
-      overflow: visible; /* the flame hangs below the rocket */
     }
 
     #pad {
@@ -223,7 +226,11 @@
       transform: scale(0);
     }
 
-    #rocket.lit .flame {
+    .flame.up {
+      transform-origin: 50% 100%; /* the balloon's burner shoots upward */
+    }
+
+    #craft.lit .flame {
       transform: none;
       animation: flicker 0.12s ease-in-out infinite alternate;
     }
@@ -231,6 +238,54 @@
     @keyframes flicker {
       from { transform: scale(1, 1); }
       to { transform: scale(0.85, 1.15); }
+    }
+
+    /* Propellers and rotors, seen from the side, spin by squashing back and forth. */
+    .blade-x,
+    .blade-y {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    #craft.lit .blade-x {
+      animation: squash-x 0.1s linear infinite alternate;
+    }
+
+    #craft.lit .blade-y {
+      animation: squash-y 0.08s linear infinite alternate;
+    }
+
+    @keyframes squash-x {
+      to { transform: scaleX(0.1); }
+    }
+
+    @keyframes squash-y {
+      to { transform: scaleY(0.1); }
+    }
+
+    .beam {
+      fill: #fff3b0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    #craft.lit .beam {
+      opacity: 0.6;
+    }
+
+    .ufo-light {
+      animation: twinkle 0.8s ease-in-out infinite alternate;
+    }
+
+    .blimp-name {
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 600;
+      fill: #ffca3a;
+      stroke: var(--outline);
+      stroke-width: 3;
+      stroke-linejoin: round;
+      paint-order: stroke fill; /* outline behind the letters, like the word's */
     }
 
     /* Each slice of fuel grows up from the bottom of its spot in the tank. */
@@ -369,11 +424,11 @@
     <div class="crater" style="left: 67%; top: 25%; width: 4vw"></div>
   </div>
   <div id="launch">
-    <div id="rocket">
-      <svg viewBox="0 0 120 219" aria-hidden="true">
+    <div id="craft">
+      <svg class="ship" data-name="rocket" viewBox="0 0 120 219" aria-hidden="true">
         <defs>
           <path id="body-shape" d="M60 6 C80 24 92 62 92 104 L90 190 Q90 202 78 202 L42 202 Q30 202 30 190 L28 104 C28 62 40 24 60 6 Z" />
-          <rect id="tank" x="44" y="102" width="32" height="76" rx="10" />
+          <rect id="tank" data-tank x="44" y="102" width="32" height="76" rx="10" />
           <clipPath id="body-clip"><use href="#body-shape" /></clipPath>
           <clipPath id="tank-clip"><use href="#tank" /></clipPath>
         </defs>
@@ -399,9 +454,175 @@
         <circle cx="55" cy="65" r="4" fill="#ffffff" />
 
         <use href="#tank" fill="#e9e4f7" />
-        <g id="fuel" clip-path="url(#tank-clip)"></g>
+        <g data-fuel clip-path="url(#tank-clip)"></g>
         <rect x="49" y="110" width="5" height="44" rx="2.5" fill="#ffffff" opacity="0.6" />
         <use class="outline" href="#tank" fill="none" />
+      </svg>
+
+      <svg class="ship" data-name="ufo" viewBox="0 0 160 100" aria-hidden="true">
+        <defs>
+          <path id="dome" d="M50 50 C50 8 110 8 110 50 Z" />
+          <clipPath id="dome-clip"><use href="#dome" /></clipPath>
+          <!-- The fuel fills this box from the bottom up, clipped to the dome. -->
+          <rect data-tank x="50" y="18" width="60" height="32" />
+        </defs>
+
+        <path class="beam" d="M62 76 H98 L132 190 H28 Z" />
+
+        <path class="outline" fill="#adb5bd" d="M54 70 L62 74 L48 93 L40 91 Z M106 70 L98 74 L112 93 L120 91 Z" />
+        <rect class="outline" x="32" y="90" width="18" height="6" rx="3" fill="#adb5bd" />
+        <rect class="outline" x="110" y="90" width="18" height="6" rx="3" fill="#adb5bd" />
+
+        <ellipse class="outline" cx="80" cy="70" rx="34" ry="10" fill="#868e96" />
+        <ellipse class="outline" cx="80" cy="58" rx="72" ry="15" fill="#ced4da" />
+        <g stroke="#1b1b1b" stroke-width="2.5">
+          <circle class="ufo-light" cx="34" cy="58" r="4.5" fill="#ffca3a" />
+          <circle class="ufo-light" cx="57" cy="62" r="4.5" fill="#ff595e" style="animation-delay: -0.8s" />
+          <circle class="ufo-light" cx="80" cy="63.5" r="4.5" fill="#8ac926" />
+          <circle class="ufo-light" cx="103" cy="62" r="4.5" fill="#ff595e" style="animation-delay: -0.8s" />
+          <circle class="ufo-light" cx="126" cy="58" r="4.5" fill="#ffca3a" />
+        </g>
+
+        <use href="#dome" fill="#e9e4f7" />
+        <g data-fuel clip-path="url(#dome-clip)"></g>
+        <!-- The alien sits in front of the fuel, so the dome glows up behind him. -->
+        <g clip-path="url(#dome-clip)" stroke="#1b1b1b" stroke-width="3" stroke-linecap="round">
+          <path fill="none" d="M76 32 L73 26 M84 32 L87 26" />
+          <circle cx="73" cy="25.5" r="2.2" fill="#8ac926" />
+          <circle cx="87" cy="25.5" r="2.2" fill="#8ac926" />
+          <circle cx="80" cy="40" r="10" fill="#8ac926" />
+          <ellipse cx="76" cy="39" rx="2.5" ry="3.5" fill="#1b1b1b" stroke="none" />
+          <ellipse cx="84" cy="39" rx="2.5" ry="3.5" fill="#1b1b1b" stroke="none" />
+          <circle cx="76.8" cy="37.8" r="0.9" fill="#ffffff" stroke="none" />
+          <circle cx="84.8" cy="37.8" r="0.9" fill="#ffffff" stroke="none" />
+          <path fill="none" stroke-width="2.5" d="M76.5 44.5 Q80 47 83.5 44.5" />
+        </g>
+        <path d="M58 42 Q59 30 70 25" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.6" />
+        <use class="outline" href="#dome" fill="none" />
+      </svg>
+
+      <!-- Planes, helicopters and blimps face left: they land from the right and leave to the left. -->
+      <svg class="ship" data-name="airplane" viewBox="0 0 200 100" aria-hidden="true">
+        <defs>
+          <path id="fuselage" d="M40 34 H160 C176 34 184 42 184 50 C184 58 176 66 160 66 H40 C28 66 20 58 20 50 C20 42 28 34 40 34 Z" />
+          <clipPath id="fuselage-clip"><use href="#fuselage" /></clipPath>
+          <rect data-tank x="20" y="34" width="164" height="32" />
+        </defs>
+        <path class="trim outline" d="M148 38 L160 8 H178 V38 Z" />
+        <path class="outline" fill="#a0e7ff" d="M50 36 C54 20 80 20 88 36 Z" />
+        <path class="outline" fill="none" d="M62 64 V88 M166 64 V92" />
+        <circle class="outline" cx="62" cy="90" r="8" fill="#495057" />
+        <circle class="outline" cx="166" cy="93" r="5" fill="#495057" />
+
+        <use href="#fuselage" fill="#ffffff" />
+        <g data-fuel clip-path="url(#fuselage-clip)"></g>
+        <g class="outline" fill="#ffffff" style="stroke-width: 3">
+          <circle cx="104" cy="46" r="4.5" />
+          <circle cx="120" cy="46" r="4.5" />
+          <circle cx="136" cy="46" r="4.5" />
+        </g>
+        <use class="outline" href="#fuselage" fill="none" />
+
+        <path class="trim outline" d="M156 50 H182 C186 50 186 56 182 56 H156 Z" />
+        <path class="trim outline" d="M74 54 H116 L102 82 H88 Z" />
+        <circle class="outline" cx="20" cy="50" r="7" fill="#ffca3a" />
+        <ellipse class="blade-y outline" cx="11" cy="50" rx="3.5" ry="24" fill="#adb5bd" />
+      </svg>
+
+      <svg class="ship" data-name="helicopter" viewBox="0 0 180 108" aria-hidden="true">
+        <defs>
+          <path id="cabin" d="M30 62 C30 40 52 30 80 30 H100 C118 30 128 44 128 60 C128 76 116 86 96 86 H54 C38 86 30 76 30 62 Z" />
+          <clipPath id="cabin-clip"><use href="#cabin" /></clipPath>
+          <rect data-tank x="30" y="30" width="98" height="56" />
+        </defs>
+        <path class="trim outline" d="M120 48 L164 50 V58 L120 64 Z" />
+        <path class="trim outline" d="M156 54 L162 32 H172 L170 58 Z" />
+        <ellipse class="blade-y outline" cx="166" cy="40" rx="2.5" ry="13" fill="#adb5bd" />
+        <circle class="outline" cx="166" cy="40" r="3" fill="#495057" style="stroke-width: 3" />
+        <path class="outline" fill="none" d="M56 86 L50 102 M104 86 L110 102 M26 96 Q28 104 38 104 H134" />
+        <rect class="outline" x="74" y="16" width="10" height="16" fill="#adb5bd" />
+
+        <use href="#cabin" fill="#ffffff" />
+        <g data-fuel clip-path="url(#cabin-clip)"></g>
+        <path class="outline" fill="#a0e7ff" d="M36 58 C36 44 50 36 66 36 H80 V58 Z" />
+        <use class="outline" href="#cabin" fill="none" />
+
+        <ellipse class="blade-x outline" cx="79" cy="14" rx="70" ry="3.5" fill="#adb5bd" />
+        <circle class="outline" cx="79" cy="14" r="5" fill="#495057" />
+      </svg>
+
+      <svg class="ship" data-name="balloon" viewBox="0 0 120 195" aria-hidden="true">
+        <defs>
+          <path id="envelope" d="M60 6 C96 6 112 34 110 62 C108 88 84 108 74 122 H46 C36 108 12 88 10 62 C8 34 24 6 60 6 Z" />
+          <clipPath id="envelope-clip"><use href="#envelope" /></clipPath>
+          <rect data-tank x="8" y="6" width="104" height="116" />
+        </defs>
+        <!-- Long ropes leave a gap, so the burner's flame stays below the balloon. -->
+        <path class="outline" fill="none" style="stroke-width: 3" d="M48 122 L47 168 M72 122 L73 168" />
+
+        <use href="#envelope" fill="#ffffff" />
+        <g data-fuel clip-path="url(#envelope-clip)"></g>
+        <path class="outline" fill="none" style="stroke-width: 3.5" d="M60 6 V122 M60 6 C38 22 32 74 46 122 M60 6 C82 22 88 74 74 122" />
+        <use class="outline" href="#envelope" fill="none" />
+
+        <g class="flame up">
+          <path class="outline" fill="#ff8c42" d="M54 156 C52 148 58 143 60 134 C62 143 68 148 66 156 Z" />
+          <path fill="#ffd23f" d="M57 156 C56 151 59 148 60 143 C61 148 64 151 63 156 Z" />
+        </g>
+        <rect class="outline" x="53" y="156" width="14" height="8" rx="2" fill="#868e96" />
+        <rect class="outline" x="44" y="168" width="32" height="24" rx="4" fill="#c68642" />
+        <path class="outline" fill="none" style="stroke-width: 3" d="M44 176 H76 M44 184 H76" />
+      </svg>
+
+      <svg class="ship" data-name="blimp" viewBox="0 0 200 107" aria-hidden="true">
+        <defs>
+          <path id="blimp-body" d="M20 40 C20 18 50 6 96 6 C140 6 172 20 182 40 C172 60 140 74 96 74 C50 74 20 62 20 40 Z" />
+          <clipPath id="blimp-clip"><use href="#blimp-body" /></clipPath>
+          <rect data-tank x="20" y="6" width="162" height="68" />
+        </defs>
+        <path class="trim outline" d="M150 20 L176 4 H188 L178 30 Z M150 60 L176 76 H188 L178 50 Z" />
+        <circle class="outline" cx="96" cy="98" r="6" fill="#495057" />
+        <rect class="outline" x="72" y="66" width="48" height="22" rx="9" fill="#ffffff" />
+        <g class="outline" fill="#a0e7ff" style="stroke-width: 3">
+          <circle cx="84" cy="80" r="3.5" />
+          <circle cx="96" cy="80" r="3.5" />
+          <circle cx="108" cy="80" r="3.5" />
+        </g>
+
+        <use href="#blimp-body" fill="#ffffff" />
+        <g data-fuel clip-path="url(#blimp-clip)"></g>
+        <path class="outline" fill="none" style="stroke-width: 3" d="M44 14 C36 30 36 50 44 66" />
+        <!-- textLength squeezes or stretches it to fit, whichever font loads -->
+        <text class="blimp-name" x="99" y="46" text-anchor="middle" textLength="84" lengthAdjust="spacingAndGlyphs">GOOD YEAR</text>
+        <use class="outline" href="#blimp-body" fill="none" />
+
+        <path class="outline" fill="none" d="M120 80 H128" />
+        <ellipse class="blade-y outline" cx="128" cy="80" rx="2.5" ry="10" fill="#adb5bd" />
+      </svg>
+
+      <svg class="ship" data-name="lander" viewBox="0 0 140 137" aria-hidden="true">
+        <defs>
+          <rect id="descent" data-tank x="24" y="62" width="92" height="36" rx="4" />
+          <clipPath id="descent-clip"><use href="#descent" /></clipPath>
+        </defs>
+        <g class="flame">
+          <path class="outline" fill="#ff8c42" d="M56 112 C54 132 64 142 70 158 C76 142 86 132 84 112 Z" />
+          <path fill="#ffd23f" d="M62 112 C61 126 67 134 70 144 C73 134 79 126 78 112 Z" />
+        </g>
+        <path class="outline" fill="#adb5bd" d="M32 70 L38 74 L13 128 L7 126 Z M108 70 L102 74 L127 128 L133 126 Z" />
+        <ellipse class="outline" cx="10" cy="130" rx="10" ry="4" fill="#adb5bd" />
+        <ellipse class="outline" cx="130" cy="130" rx="10" ry="4" fill="#adb5bd" />
+        <path class="outline" fill="#868e96" d="M60 98 H80 L86 112 H54 Z" />
+
+        <path class="outline" fill="none" d="M100 22 L108 8" />
+        <circle class="outline" cx="109" cy="7" r="4" fill="#ffffff" style="stroke-width: 3" />
+        <path class="outline" fill="#dee2e6" d="M40 22 H100 L112 40 V62 H28 V40 Z" />
+        <rect class="outline" x="56" y="32" width="28" height="18" rx="6" fill="#a0e7ff" />
+
+        <!-- The gold descent stage is the fuel tank. -->
+        <use href="#descent" fill="#fbe8a6" />
+        <g data-fuel clip-path="url(#descent-clip)"></g>
+        <use class="outline" href="#descent" fill="none" />
       </svg>
     </div>
     <div id="pad"></div>

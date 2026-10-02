@@ -32,23 +32,34 @@ const CONFIG = {
     letterOutline: "#1b1b1b",
     // One color fills every letter. List several to cycle through them (rainbow!).
     letterFilled: ["#8e44ec"],
-    rocket: "#ff595e", // nose, fins and stripe
+    rocket: "#ff595e", // the rocket's nose, fins and stripe, and the red parts of the other craft
   },
 
   // Each finished word moves on to the next scene, looping back to the first.
   // `backdrop` floats far off in the sky: "moon", "earth" or "saturn".
   // `craters` is the crater color; leave it (or `stars`, `clouds`, `backdrop`) out for plain ground or sky.
+  // `craft` lists what can land there, picked at random each visit: "rocket", "airplane",
+  // "helicopter", "balloon", "blimp", "lander" or "ufo". Leave it out for just the rocket.
   scenes: [
-    { name: "earth", sky: "#bde0fe", ground: "#95d5b2", clouds: true, backdrop: "moon" },
-    { name: "moon", sky: "#0b1633", ground: "#c9c9d1", craters: "#9d9daa", stars: true, backdrop: "earth" },
-    { name: "mars", sky: "#2b1030", ground: "#d9622b", craters: "#a8461c", stars: true, backdrop: "saturn" },
+    {
+      name: "earth", sky: "#bde0fe", ground: "#95d5b2", clouds: true, backdrop: "moon",
+      craft: ["rocket", "airplane", "helicopter", "balloon", "blimp"],
+    },
+    {
+      name: "moon", sky: "#0b1633", ground: "#c9c9d1", craters: "#9d9daa", stars: true, backdrop: "earth",
+      craft: ["rocket", "lander"],
+    },
+    {
+      name: "mars", sky: "#2b1030", ground: "#d9622b", craters: "#a8461c", stars: true, backdrop: "saturn",
+      craft: ["rocket", "ufo"],
+    },
   ],
 
   font: '"Fredoka", "Arial Rounded MT Bold", "Chalkboard SE", "Comic Sans MS", sans-serif',
 
   highlightNextLetter: true, // gently bounce the letter to type next
   wiggleOnMistake: true,     // wiggle that letter when the wrong key is pressed
-  showRocket: true,          // each letter fuels the rocket; a finished word blasts it off
+  showRocket: true,          // each letter fuels the rocket (or other craft); a finished word flies it off
 
   sounds: true,     // chime on each correct letter, fanfare on each finished word
   soundOnMistake: true, // a soft "uh-oh" when the wrong key is pressed
