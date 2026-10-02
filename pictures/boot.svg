@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- a yellow rain boot, toe pointing right -->
+  <g stroke="#1b1b1b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path fill="#ffca3a" d="M30 12 H62 V54 C62 60 66 62 72 63 C84 64 92 70 92 80 V86 H28 Z" />
+    <path fill="none" stroke="#ffffff" stroke-width="4" opacity="0.6" d="M38 26 V50" />
+    <rect x="27" y="9" width="38" height="10" rx="3" fill="#f4a300" />
+    <rect x="25" y="78" width="70" height="10" rx="3" fill="#495057" />
+  </g>
+</svg>

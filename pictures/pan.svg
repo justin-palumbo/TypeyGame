@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 30 100 50">
+  <!-- a frying pan from the side, handle angled up to the right -->
+  <g stroke="#1b1b1b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="rotate(-14 58 52)">
+      <rect x="58" y="48" width="38" height="9" rx="4.5" fill="#a0522d" />
+      <circle cx="90" cy="52.5" r="2" fill="#1b1b1b" stroke="none" />
+    </g>
+    <path fill="#495057" d="M6 48 H64 L60 66 Q59 71 53 71 H17 Q11 71 10 66 Z" />
+    <path fill="none" stroke="#ffffff" stroke-width="3" opacity="0.35" d="M17 58 H52" />
+    <ellipse cx="35" cy="48" rx="29" ry="4.5" fill="#343a40" />
+  </g>
+</svg>

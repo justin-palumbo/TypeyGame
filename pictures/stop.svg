@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path fill="#e63946" stroke="#1b1b1b" stroke-width="4" stroke-linejoin="round" d="M32.4 7.5 H67.6 L92.5 32.4 V67.6 L67.6 92.5 H32.4 L7.5 67.6 V32.4 Z" />
+  <path fill="none" stroke="#ffffff" stroke-width="3.5" stroke-linejoin="round" d="M34.7 13 H65.3 L87 34.7 V65.3 L65.3 87 H34.7 L13 65.3 V34.7 Z" />
+  <!-- Pictures load on their own, without the page's font, so this uses common system fonts.
+       textLength keeps the word the same width whichever one is used. -->
+  <text x="50" y="60" text-anchor="middle" textLength="64" lengthAdjust="spacingAndGlyphs"
+        font-family="Arial Rounded MT Bold, Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#ffffff">STOP</text>
+</svg>
