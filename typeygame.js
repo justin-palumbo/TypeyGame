@@ -1,8 +1,8 @@
-// Typey Game: a word appears, type it one letter at a time.
+// The typing game: a word appears, type it one letter at a time.
 // Each letter adds fuel to a craft (a rocket, plane, UFO...), and a finished word flies it off to the next scene.
-// All the settings live in config.js.
+// All the settings live in config.js; the title screen calls TypingGame.start() and .stop().
 
-(() => {
+const TypingGame = (() => {
   const SVG_NS = "http://www.w3.org/2000/svg";
 
   // C major pentatonic, so any run of chimes sounds pleasant.
@@ -123,12 +123,9 @@
 
   const wordEl = document.getElementById("word");
   const canvas = document.getElementById("confetti");
-  const fullscreenBtn = document.getElementById("fullscreen");
   const launchEl = document.getElementById("launch");
   const craftEl = document.getElementById("craft");
   const shipEls = [...document.querySelectorAll(".ship")];
-  const starsEl = document.getElementById("stars");
-  const backdropEls = document.querySelectorAll(".backdrop");
 
   let scene = 0; // index into CONFIG.scenes
   let ship = shipEls[0]; // the craft this scene uses
@@ -141,23 +138,37 @@
   let bag = [];
   let audio = null;
   let uhOhUntil = 0; // audio time when the current "uh-oh" finishes
+  let nextWordTimer = 0;
+  let confettiFrame = 0;
 
-  applyTheme();
   sizeShips();
-  scatterStars();
-  showScene();
-  showWord(pickWord());
 
-  window.addEventListener("keydown", onKey);
-  fullscreenBtn.addEventListener("click", toggleFullscreen);
+  return { start, stop };
 
-  function applyTheme() {
-    const root = document.documentElement.style;
-    root.setProperty("--rocket", CONFIG.colors.rocket);
-    root.setProperty("--empty", CONFIG.colors.letterEmpty);
-    root.setProperty("--outline", CONFIG.colors.letterOutline);
-    root.setProperty("--font", CONFIG.font);
+  // Every game begins in the first scene, the one behind the title screen.
+  function start() {
     document.body.classList.toggle("no-rocket", !CONFIG.showRocket);
+    scene = 0;
+    showScene();
+    showWord(pickWord());
+    window.addEventListener("keydown", onKey);
+  }
+
+  // Back to the title screen: clear away the word, the craft's flight, and anything
+  // still on its way (the next word, confetti, speech and sounds).
+  function stop() {
+    window.removeEventListener("keydown", onKey);
+    clearTimeout(nextWordTimer);
+    stopFlying();
+    craftEl.classList.remove("lit");
+    wordEl.replaceChildren();
+    cancelAnimationFrame(confettiFrame);
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    // Closing the audio cuts off any sound mid-play; the next key press opens it again.
+    audio?.close();
+    audio = null;
+    uhOhUntil = 0;
   }
 
   // Shuffle-bag: every word appears once before any word repeats.
@@ -264,7 +275,7 @@
     letterEls.forEach((el, i) =>
       el.animate(HOP, { duration: 450, delay: i * 70, iterations: 2, easing: "ease-in-out" }));
     if (CONFIG.showRocket) blastOff();
-    setTimeout(() => {
+    nextWordTimer = setTimeout(() => {
       // Change scenes while the craft is off screen, so it lands somewhere new.
       scene = (scene + 1) % CONFIG.scenes.length;
       showScene();
@@ -274,31 +285,9 @@
 
   // --- Scenes --------------------------------------------------------------
 
-  function scatterStars(count = 100) {
-    const stars = Array.from({ length: count }, () => {
-      const star = document.createElement("div");
-      star.className = "star";
-      star.style.left = `${Math.random() * 100}%`;
-      star.style.top = `${Math.random() * 100}%`;
-      star.style.width = `${2 + Math.random() ** 3 * 6}px`; // mostly tiny, a few big ones
-      star.style.animationDuration = `${1.5 + Math.random() * 2}s`;
-      star.style.animationDelay = `${-Math.random() * 3}s`; // so they don't twinkle in step
-      return star;
-    });
-    starsEl.replaceChildren(...stars);
-  }
-
+  // Shows the current scene (see page.js) and picks which of its craft lands there.
   function showScene() {
-    const { sky, ground, craters, stars, clouds, backdrop, craft = "rocket" } = CONFIG.scenes[scene];
-    const root = document.documentElement.style;
-    root.setProperty("--sky", sky);
-    root.setProperty("--ground", ground);
-    // Keep the old crater color when leaving a cratered scene, so they fade out in it.
-    if (craters) root.setProperty("--crater", craters);
-    document.body.classList.toggle("cratered", Boolean(craters));
-    document.body.classList.toggle("starry", Boolean(stars));
-    document.body.classList.toggle("cloudy", Boolean(clouds));
-    backdropEls.forEach((el) => el.classList.toggle("shown", el.dataset.name === backdrop));
+    const { craft = "rocket" } = Page.showScene(scene);
     const choices = [].concat(craft);
     const pick = choices[Math.floor(Math.random() * choices.length)];
     ship = shipEls.find((el) => el.dataset.name === pick) || shipEls[0];
@@ -549,7 +538,7 @@
     }));
 
     const start = performance.now();
-    requestAnimationFrame(function frame(now) {
+    confettiFrame = requestAnimationFrame(function frame(now) {
       ctx.clearRect(0, 0, w, h);
       if (now - start > CONFIG.celebrationMs) return;
       for (const p of pieces) {
@@ -565,15 +554,7 @@
         ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
         ctx.restore();
       }
-      requestAnimationFrame(frame);
+      confettiFrame = requestAnimationFrame(frame);
     });
-  }
-
-  // --- Full screen ---------------------------------------------------------
-
-  function toggleFullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen();
-    fullscreenBtn.blur(); // so key presses don't re-trigger the button
   }
 })();
