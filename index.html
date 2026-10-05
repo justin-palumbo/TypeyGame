@@ -240,6 +240,12 @@
       to { transform: scale(0.85, 1.15); }
     }
 
+    /* Artemis I's side boosters tumble about their own middles as they fall away. */
+    .booster {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
     /* Propellers and rotors, seen from the side, spin by squashing back and forth. */
     .blade-x,
     .blade-y {
@@ -313,7 +319,7 @@
     }
 
     /* The title screen sits over the first scene, above the moon and low cloud.
-       The launch pad and craft stay hidden until a game starts. */
+       The launch pad and craft stay hidden until a mode starts. */
     .on-title #launch {
       display: none;
     }
@@ -344,16 +350,26 @@
       animation: bounce 2.4s ease-in-out infinite;
     }
 
-    #start {
-      padding: 0.25em 1.1em;
+    #menu {
+      display: flex;
+      gap: 3vw;
+    }
+
+    .mode {
+      padding: 0.25em 1em;
       border: 6px solid var(--outline);
       border-radius: 999px;
-      background: var(--rocket);
-      color: #ffffff;
+      background: #ffffff;
+      color: var(--outline);
       font-family: var(--font);
-      font-size: min(5vw, 8vh);
+      font-size: min(4.5vw, 7vh);
       font-weight: 600;
       cursor: pointer;
+    }
+
+    .mode.selected {
+      background: var(--rocket);
+      color: #ffffff;
       animation: pulse 1.6s ease-in-out infinite;
     }
 
@@ -361,11 +377,97 @@
       50% { transform: scale(1.06); }
     }
 
-    #start-hint {
+    #menu-hint {
       margin: -3vh 0 0;
       color: var(--outline);
       font-size: min(2.5vw, 3.5vh);
       opacity: 0.6;
+    }
+
+    /* Most and Least: the question on top and three answer boxes below, all in the
+       top half of the screen like the typing game's word, clear of the craft. */
+    #quiz {
+      position: fixed;
+      inset: 0 0 45vh 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3vh;
+    }
+
+    #quiz[hidden] {
+      display: none;
+    }
+
+    #quiz-prompt {
+      margin: 0;
+      color: var(--empty);
+      font-size: min(7vh, 6vw);
+      font-weight: 600;
+      -webkit-text-stroke: 0.09em var(--outline);
+      paint-order: stroke fill;
+    }
+
+    .quiz-word {
+      color: #ffca3a;
+    }
+
+    #quiz-choices {
+      display: flex;
+      gap: 4vw;
+    }
+
+    .choice {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5vh;
+      cursor: pointer;
+    }
+
+    /* Every box and every picture is the same size, so only the count differs. */
+    .choice-box {
+      display: grid;
+      grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+      gap: 4%;
+      box-sizing: border-box;
+      width: min(28vh, 24vw);
+      aspect-ratio: 1;
+      padding: 7%;
+      background: #ffffff;
+      border: 6px solid var(--outline);
+      border-radius: 18%;
+      transition: box-shadow 0.2s, opacity 0.2s;
+    }
+
+    .choice-box img {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+      object-fit: contain;
+    }
+
+    /* Looks like a key on the keyboard, to press. */
+    .choice-key {
+      width: 1.6em;
+      line-height: 1.5em;
+      text-align: center;
+      background: #ffffff;
+      border: 5px solid var(--outline);
+      border-radius: 0.3em;
+      box-shadow: 0 0.12em 0 var(--outline);
+      color: var(--outline);
+      font-size: min(5vh, 4vw);
+      font-weight: 600;
+    }
+
+    .choice.right .choice-box {
+      box-shadow: 0 0 0 8px #ffca3a, 0 0 32px 12px #ffca3a;
+    }
+
+    .choice.wrong .choice-box {
+      opacity: 0.5;
     }
 
     #confetti {
@@ -557,6 +659,61 @@
         <use class="outline" href="#dome" fill="none" />
       </svg>
 
+      <!-- Artemis I: an orange core stage with Orion on top, between two white boosters that
+           fall away partway up (see dropBoosters in craft.js). It rolls out to the pad rather than landing. -->
+      <svg class="ship" data-name="artemis" viewBox="10 0 110 240" aria-hidden="true">
+        <defs>
+          <rect id="artemis-tank" data-tank x="56" y="92" width="18" height="112" rx="9" />
+          <clipPath id="artemis-tank-clip"><use href="#artemis-tank" /></clipPath>
+        </defs>
+
+        <g class="flame">
+          <path class="outline" fill="#ff8c42" d="M48 238 C46 262 58 272 65 292 C72 272 84 262 82 238 Z" />
+          <path fill="#ffd23f" d="M55 238 C54 254 61 262 65 274 C69 262 76 254 75 238 Z" />
+        </g>
+
+        <g class="booster" data-side="left">
+          <g class="flame">
+            <path class="outline" fill="#ff8c42" d="M20 238 C18 262 28 274 31 296 C34 274 44 262 42 238 Z" />
+            <path fill="#ffd23f" d="M25 238 C24 254 29 262 31 274 C33 262 38 254 37 238 Z" />
+          </g>
+          <path class="outline" fill="none" d="M40 124 H45 M40 210 H45" />
+          <path class="outline" fill="#ffffff" d="M22 104 C22 92 26 86 31 82 C36 86 40 92 40 104 Z" />
+          <rect class="outline" x="22" y="104" width="18" height="122" fill="#f8f9fa" />
+          <path fill="none" stroke="#adb5bd" stroke-width="2.5" d="M24 146 H38 M24 186 H38" />
+          <path class="outline" fill="#dee2e6" d="M21 226 H41 L44 238 H18 Z" />
+        </g>
+        <g class="booster" data-side="right">
+          <g class="flame">
+            <path class="outline" fill="#ff8c42" d="M88 238 C86 262 96 274 99 296 C102 274 112 262 110 238 Z" />
+            <path fill="#ffd23f" d="M93 238 C92 254 97 262 99 274 C101 262 106 254 105 238 Z" />
+          </g>
+          <path class="outline" fill="none" d="M90 124 H85 M90 210 H85" />
+          <path class="outline" fill="#ffffff" d="M90 104 C90 92 94 86 99 82 C104 86 108 92 108 104 Z" />
+          <rect class="outline" x="90" y="104" width="18" height="122" fill="#f8f9fa" />
+          <path fill="none" stroke="#adb5bd" stroke-width="2.5" d="M92 146 H106 M92 186 H106" />
+          <path class="outline" fill="#dee2e6" d="M89 226 H109 L112 238 H86 Z" />
+        </g>
+
+        <path class="outline" fill="#868e96" d="M50 230 H60 L62 238 H48 Z M70 230 H80 L82 238 H68 Z" />
+        <rect class="outline" x="46" y="222" width="38" height="8" fill="#495057" />
+        <rect class="outline" x="44" y="74" width="42" height="148" fill="#e07a2b" />
+        <rect x="74" y="76" width="9" height="144" fill="#b85e1b" opacity="0.35" />
+        <path fill="none" stroke="#b85e1b" stroke-width="2.5" d="M46 118 H84 M46 170 H84" />
+        <path class="outline" fill="#f8f9fa" d="M44 74 L51 58 H79 L86 74 Z" />
+        <rect class="outline" x="51" y="44" width="28" height="14" fill="#f1f3f5" />
+        <path class="outline" fill="#ced4da" d="M52 44 L59 24 H71 L78 44 Z" />
+        <circle class="outline" cx="65" cy="35" r="3.5" fill="#a0e7ff" style="stroke-width: 2.5" />
+        <path class="outline" fill="none" d="M65 24 V8" />
+        <ellipse class="outline" cx="65" cy="15" rx="4" ry="6" fill="#ffffff" />
+        <path class="outline" fill="#ffffff" d="M62 8 L65 2 L68 8 Z" />
+
+        <use href="#artemis-tank" fill="#e9e4f7" />
+        <g data-fuel clip-path="url(#artemis-tank-clip)"></g>
+        <rect x="60" y="100" width="4" height="50" rx="2" fill="#ffffff" opacity="0.6" />
+        <use class="outline" href="#artemis-tank" fill="none" />
+      </svg>
+
       <!-- Planes, helicopters and blimps face left: they land from the right and leave to the left. -->
       <svg class="ship" data-name="airplane" viewBox="0 0 200 100" aria-hidden="true">
         <defs>
@@ -684,10 +841,18 @@
     <div id="pad"></div>
   </div>
 
+  <div id="quiz" hidden>
+    <p id="quiz-prompt"></p>
+    <div id="quiz-choices"></div>
+  </div>
+
   <div id="title">
     <h1 id="title-name">Launch and Learn</h1>
-    <button id="start">Start game</button>
-    <p id="start-hint">press Enter</p>
+    <div id="menu">
+      <button class="mode" data-mode="typing">Typing</button>
+      <button class="mode" data-mode="most-least">Most and Least</button>
+    </div>
+    <p id="menu-hint">← → to choose, Enter to start</p>
   </div>
 
   <canvas id="confetti"></canvas>
@@ -700,7 +865,10 @@
   <!-- Plain scripts rather than modules, so the game also works opened straight from disk. -->
   <script src="config.js"></script>
   <script src="page.js"></script>
+  <script src="sound.js"></script>
+  <script src="craft.js"></script>
   <script src="typeygame.js"></script>
+  <script src="mostleast.js"></script>
   <script src="title.js"></script>
 </body>
 </html>

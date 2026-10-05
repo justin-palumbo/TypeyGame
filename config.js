@@ -18,7 +18,7 @@ const CONFIG = {
   ],
 
   // A picture shown beside a word while it's typed. Any image file works, even a photo.
-  // Words without one here just show the word.
+  // Words without one here just show the word. Most and Least counts these pictures too.
   pictures: {
     dog: "pictures/dog.svg",
     cat: "pictures/cat.svg",
@@ -45,11 +45,20 @@ const CONFIG = {
     rocket: "#ff595e", // the rocket's nose, fins and stripe, and the red parts of the other craft
   },
 
-  // Each finished word moves on to the next scene, looping back to the first.
+  // Most and Least: boxes A, B and C each hold a different number of the same picture,
+  // and the question asks which has the most (or the fewest).
+  mostAndLeast: {
+    largestCount: 5,          // boxes hold from 1 up to this many pictures (at most 6)
+    answersToLaunch: 5,       // right answers that fill the tank and launch the craft
+    skipPictures: ["matteo"], // pictures not to use for counting
+    firstCraft: "artemis",    // every game starts with Artemis I on the pad; then each scene's own craft
+  },
+
+  // Each launch moves on to the next scene, looping back to the first.
   // `backdrop` floats far off in the sky: "moon", "earth" or "saturn".
   // `craters` is the crater color; leave it (or `stars`, `clouds`, `backdrop`) out for plain ground or sky.
   // `craft` lists what can land there, picked at random each visit: "rocket", "airplane",
-  // "helicopter", "balloon", "blimp", "lander" or "ufo". Leave it out for just the rocket.
+  // "helicopter", "balloon", "blimp", "lander", "ufo" or "artemis". Leave it out for just the rocket.
   scenes: [
     {
       name: "earth", sky: "#bde0fe", ground: "#95d5b2", clouds: true, backdrop: "moon",
@@ -68,10 +77,10 @@ const CONFIG = {
   font: '"Fredoka", "Arial Rounded MT Bold", "Chalkboard SE", "Comic Sans MS", sans-serif',
 
   highlightNextLetter: true, // gently bounce the letter to type next
-  wiggleOnMistake: true,     // wiggle that letter when the wrong key is pressed
-  showRocket: true,          // each letter fuels the rocket (or other craft); a finished word flies it off
+  wiggleOnMistake: true,     // wiggle the letter (or answer box) when the wrong key is pressed
+  showRocket: true,          // typing: each letter fuels the rocket (or other craft); a finished word flies it off
 
-  sounds: true,     // chime on each correct letter, fanfare on each finished word
+  sounds: true,     // chime on each right letter or answer, fanfare on each launch
   soundOnMistake: true, // a soft "uh-oh" when the wrong key is pressed
   sayLetters: false, // speak each letter out loud as it's typed
   sayWord: true,    // speak the whole word when it's finished
