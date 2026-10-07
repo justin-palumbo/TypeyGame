@@ -50,6 +50,7 @@ const CONFIG = {
   mostAndLeast: {
     largestCount: 5,          // boxes hold from 1 up to this many pictures (at most 6)
     answersToLaunch: 5,       // right answers that fill the tank and launch the craft
+    strikes: 3,               // wrong answers before the craft explodes and the tank starts over (0 for never)
     skipPictures: ["matteo"], // pictures not to use for counting
     firstCraft: "artemis",    // every game starts with Artemis I on the pad; then each scene's own craft
   },

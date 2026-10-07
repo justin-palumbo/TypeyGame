@@ -470,6 +470,62 @@
       opacity: 0.5;
     }
 
+    /* Most and Least's strikes: each wrong answer turns an X red, and the craft blows up on the last.
+       They sit on the ground strip, centered under the launch pad. */
+    #strikes {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 0.8vw;
+      height: var(--ground-h);
+    }
+
+    #strikes[hidden] {
+      display: none;
+    }
+
+    .strike {
+      width: min(5.5vh, 5vw);
+      aspect-ratio: 1;
+      opacity: 0.55;
+      transition: opacity 0.2s;
+    }
+
+    .strike-fill {
+      stroke: #ffffff;
+      transition: stroke 0.2s;
+    }
+
+    .strike.struck {
+      opacity: 1;
+    }
+
+    .strike.struck .strike-fill {
+      stroke: #e63946;
+    }
+
+    /* Hidden except while it bursts; craft.js sizes and places it over the craft. */
+    #boom {
+      position: fixed;
+      aspect-ratio: 1;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #boom text {
+      fill: #ffffff;
+      stroke: var(--outline);
+      stroke-width: 3;
+      stroke-linejoin: round;
+      paint-order: stroke fill;
+      font-family: var(--font);
+      font-size: 20px;
+      font-weight: 600;
+    }
+
     #confetti {
       position: fixed;
       inset: 0;
@@ -839,12 +895,20 @@
       </svg>
     </div>
     <div id="pad"></div>
+    <!-- Most and Least fills this with one X per allowed strike, on the ground under the pad. -->
+    <div id="strikes" hidden></div>
   </div>
 
   <div id="quiz" hidden>
     <p id="quiz-prompt"></p>
     <div id="quiz-choices"></div>
   </div>
+  <!-- The cartoon burst when a craft explodes; craft.js puts it over the craft. -->
+  <svg id="boom" viewBox="0 0 100 100" aria-hidden="true">
+    <polygon class="outline" fill="#ff8c42" points="50.0 2.0 57.8 21.0 74.0 8.4 71.2 28.8 91.6 26.0 79.0 42.2 98.0 50.0 79.0 57.8 91.6 74.0 71.2 71.2 74.0 91.6 57.8 79.0 50.0 98.0 42.2 79.0 26.0 91.6 28.8 71.2 8.4 74.0 21.0 57.8 2.0 50.0 21.0 42.2 8.4 26.0 28.8 28.8 26.0 8.4 42.2 21.0" />
+    <polygon fill="#ffd23f" points="50.0 14.0 55.7 28.7 68.0 18.8 65.6 34.4 81.2 32.0 71.3 44.3 86.0 50.0 71.3 55.7 81.2 68.0 65.6 65.6 68.0 81.2 55.7 71.3 50.0 86.0 44.3 71.3 32.0 81.2 34.4 65.6 18.8 68.0 28.7 55.7 14.0 50.0 28.7 44.3 18.8 32.0 34.4 34.4 32.0 18.8 44.3 28.7" />
+    <text x="50" y="57" text-anchor="middle" textLength="52" lengthAdjust="spacingAndGlyphs">BOOM!</text>
+  </svg>
 
   <div id="title">
     <h1 id="title-name">Launch and Learn</h1>

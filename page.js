@@ -60,7 +60,8 @@ const Page = (() => {
   }
 
   // A burst of confetti from the middle of `fromEl`, lasting CONFIG.celebrationMs.
-  function confetti(fromEl) {
+  // Craft explosions pass their own `colors` for flying debris.
+  function confetti(fromEl, colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93", ...[].concat(CONFIG.colors.letterFilled)]) {
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
     const w = window.innerWidth;
@@ -69,7 +70,6 @@ const Page = (() => {
     canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const colors = ["#ff595e", "#ffca3a", "#8ac926", "#1982c4", "#6a4c93", ...[].concat(CONFIG.colors.letterFilled)];
     const box = fromEl.getBoundingClientRect();
     const pieces = Array.from({ length: 160 }, () => ({
       x: box.left + box.width / 2,

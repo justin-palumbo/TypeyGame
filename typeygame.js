@@ -133,11 +133,11 @@ const TypingGame = (() => {
     pictureEl?.animate(Page.POP, { duration: 450, iterations: 2, easing: "ease-in-out" });
     letterEls.forEach((el, i) =>
       el.animate(HOP, { duration: 450, delay: i * 70, iterations: 2, easing: "ease-in-out" }));
-    if (CONFIG.showRocket) Craft.launch();
+    const flightMs = CONFIG.showRocket ? Craft.launch() : 0;
     nextWordTimer = setTimeout(() => {
-      // Change scenes while the craft is off screen, so it lands somewhere new.
+      // Change scenes once the craft is off screen, so it lands somewhere new.
       scene = (scene + 1) % CONFIG.scenes.length;
       showWord(pickWord());
-    }, CONFIG.celebrationMs);
+    }, Math.max(CONFIG.celebrationMs, flightMs));
   }
 })();

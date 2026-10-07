@@ -2,6 +2,7 @@
 // (from 1 up to `largestCount`). The question asks which has the most (or the fewest);
 // answer with the A, B or C key, or a click.
 // Each right answer adds a slice of fuel, and a full tank launches the craft to the next scene.
+// Each wrong answer is a strike (a red X); too many and the craft explodes, fuel and all.
 // Settings are under `mostAndLeast` in config.js; the title screen calls MostLeast.start() and .stop().
 
 const MostLeast = (() => {
@@ -17,6 +18,12 @@ const MostLeast = (() => {
   };
   const NEXT_MS = 1200; // after a right answer, the pause before the next question
   const SHOW_RIGHT_MS = 1600; // after a wrong answer, how long the right box glows
+  const REBUILD_MS = 3000; // after an explosion, the wait before a new craft lands
+  // An X drawn twice: thick in the outline color, then thinner on top in white (or red, once struck).
+  const STRIKE = `<svg class="strike" viewBox="0 0 40 40" aria-hidden="true">
+    <path d="M9 9 L31 31 M31 9 L9 31" stroke="#1b1b1b" stroke-width="13" stroke-linecap="round" />
+    <path class="strike-fill" d="M9 9 L31 31 M31 9 L9 31" stroke-width="7" stroke-linecap="round" />
+  </svg>`;
 
   const settings = CONFIG.mostAndLeast;
   const pictures = Object.keys(CONFIG.pictures).filter((name) => !settings.skipPictures.includes(name));
@@ -25,9 +32,13 @@ const MostLeast = (() => {
   const quizEl = document.getElementById("quiz");
   const promptEl = document.getElementById("quiz-prompt");
   const choicesEl = document.getElementById("quiz-choices");
+  const strikesEl = document.getElementById("strikes");
+  strikesEl.innerHTML = STRIKE.repeat(settings.strikes);
+  const strikeEls = [...strikesEl.children];
 
   let scene = 0; // index into CONFIG.scenes
   let fuel = 0; // right answers since the last launch
+  let strikes = 0; // wrong answers since this craft arrived
   let picture = "";
   let answer = 0; // index of the right box
   let choiceEls = [];
@@ -42,8 +53,10 @@ const MostLeast = (() => {
     document.body.classList.remove("no-rocket"); // the craft is the whole reward here
     scene = 0;
     fuel = 0;
+    setStrikes(0);
     Craft.visit(scene, settings.answersToLaunch, settings.firstCraft);
     quizEl.hidden = false;
+    strikesEl.hidden = settings.strikes === 0;
     ask();
     window.addEventListener("keydown", onKey);
     choicesEl.addEventListener("click", onClick);
@@ -55,6 +68,7 @@ const MostLeast = (() => {
     choicesEl.removeEventListener("click", onClick);
     clearTimeout(timer);
     quizEl.hidden = true;
+    strikesEl.hidden = true;
     choicesEl.replaceChildren();
     Craft.stop();
     Page.stopConfetti();
@@ -127,8 +141,8 @@ const MostLeast = (() => {
     else wrong(i);
   }
 
-  // The right box glows and adds a slice of fuel. A full tank launches the craft, and it
-  // lands in the next scene with an empty one.
+  // The right box glows and adds a slice of fuel. A full tank launches the craft, and a
+  // new one lands in the next scene with an empty tank and no strikes.
   function right() {
     const el = choiceEls[answer];
     el.classList.add("right");
@@ -144,25 +158,49 @@ const MostLeast = (() => {
     }
     Sound.fanfare();
     Page.confetti(el);
-    Craft.launch();
+    const flightMs = Craft.launch();
     timer = setTimeout(() => {
-      // Change scenes while the craft is off screen, so it lands somewhere new.
+      // Change scenes once the craft is off screen, so it lands somewhere new.
       scene = (scene + 1) % CONFIG.scenes.length;
-      fuel = 0;
-      Craft.visit(scene, settings.answersToLaunch);
-      ask();
-    }, CONFIG.celebrationMs);
+      newCraft();
+    }, Math.max(CONFIG.celebrationMs, flightMs));
   }
 
-  // The wrong pick wiggles and fades, then the right box glows before the next question.
-  // The fuel stays where it is.
+  // The wrong pick wiggles and fades and earns a strike, then the right box glows before
+  // the next question. The fuel stays where it is, unless that was the last strike.
   function wrong(i) {
     choiceEls[i].classList.add("wrong");
     if (CONFIG.wiggleOnMistake) choiceEls[i].animate(Page.WIGGLE, { duration: 400 });
     if (CONFIG.soundOnMistake) Sound.uhOh();
+    const out = settings.strikes > 0 && strikes + 1 >= settings.strikes;
+    if (settings.strikes > 0) {
+      setStrikes(strikes + 1);
+      strikeEls[strikes - 1].animate(Page.POP, { duration: 400, easing: "ease-out" });
+    }
+
     timer = setTimeout(() => {
       choiceEls[answer].classList.add("right");
-      timer = setTimeout(ask, SHOW_RIGHT_MS);
+      if (out) explode();
+      else timer = setTimeout(ask, SHOW_RIGHT_MS);
     }, 400);
+  }
+
+  // Strike out: the craft blows up, fuel and all, and a new one lands in the same scene.
+  function explode() {
+    Craft.explode();
+    timer = setTimeout(newCraft, REBUILD_MS);
+  }
+
+  // A fresh craft lands in the current scene, with an empty tank and no strikes.
+  function newCraft() {
+    fuel = 0;
+    setStrikes(0);
+    Craft.visit(scene, settings.answersToLaunch);
+    ask();
+  }
+
+  function setStrikes(n) {
+    strikes = n;
+    strikeEls.forEach((el, i) => el.classList.toggle("struck", i < strikes));
   }
 })();

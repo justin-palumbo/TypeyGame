@@ -14,8 +14,11 @@ const Craft = (() => {
   const IN_SPACE = at(0, "-115vh"); // far enough up to be off screen
   const SOFT = "cubic-bezier(0.2, 0.8, 0.4, 1)"; // fast, then gently settling
   const SPEED_UP = "cubic-bezier(0.32, 0, 0.67, 0)"; // start slow, keep speeding up
-  const TAKEOFF_MS = 2200; // every takeoff is off screen before CONFIG.celebrationMs is up
-  const BOOSTERS_OFF_MS = 1300; // when Artemis I drops its boosters, partway up
+  const TAKEOFF_MS = 2200; // how long most takeoffs take; modes wait for launch() to finish
+  const ARTEMIS_MS = 3800; // Artemis I climbs slower, so its boosters' fall is easy to see
+  const BOOSTERS_OFF_MS = 2200; // when Artemis I drops its boosters, about a quarter of the way up
+  const WOBBLE_MS = 600; // how long a craft shakes before it explodes
+  const DEBRIS = ["#ff595e", "#ff8c42", "#ffd23f", "#495057", "#adb5bd", "#ffffff"];
 
   // How each craft lands and takes off. Both return the animation that moves #craft;
   // tilts and wobbles go on the ship itself, so the two combine.
@@ -23,16 +26,18 @@ const Craft = (() => {
   // `rollsIn` craft arrive along the ground with their engines off.
   const FLIGHTS = {
     // Rolls out to the pad (it can't land: its boosters are gone), then lifts off on every
-    // engine and drops its two side boosters partway up, like the real Artemis I.
+    // engine, climbs slowly, and drops its two side boosters partway up, like the real Artemis I.
     artemis: {
       rollsIn: true,
       land: () => fly([{ ...at("40vw", 0), easing: "ease-out" }, ON_PAD], 2000),
       takeOff: () => {
-        Sound.rumble();
+        Sound.rumble(ARTEMIS_MS / 1000);
         puffSmoke();
         ship.animate(SHAKE, { duration: 600 });
         dropBoosters();
-        return fly([ON_PAD, { ...ON_PAD, offset: 0.27, easing: SPEED_UP }, IN_SPACE]);
+        // A gentler speed-up than the rocket's, so the climb lasts longer on screen.
+        const speedUp = "cubic-bezier(0.11, 0, 0.5, 0)";
+        return fly([ON_PAD, { ...ON_PAD, offset: 600 / ARTEMIS_MS, easing: speedUp }, IN_SPACE], ARTEMIS_MS);
       },
     },
     rocket: {
@@ -130,13 +135,15 @@ const Craft = (() => {
   const launchEl = document.getElementById("launch");
   const craftEl = document.getElementById("craft");
   const shipEls = [...document.querySelectorAll(".ship")];
+  const boomEl = document.getElementById("boom");
 
   let ship = shipEls[0]; // the craft on the pad now
   let fuelEls = [];
+  let boomTimer = 0;
 
   sizeShips();
 
-  return { visit, setFuel, launch, stop };
+  return { visit, setFuel, launch, explode, stop };
 
   // Shows scene `index` (see page.js), picks one of its craft (or uses `only`, if given),
   // gives it an empty tank of `slices` slices, and lands it on the pad.
@@ -161,14 +168,48 @@ const Craft = (() => {
   }
 
   // Takes off with its own motion and sound, and stays off screen until the next visit.
+  // Returns how long the takeoff lasts, in ms, so modes can wait for it to finish.
   function launch() {
     stopFlying();
     craftEl.classList.add("lit");
-    FLIGHTS[ship.dataset.name].takeOff();
+    return FLIGHTS[ship.dataset.name].takeOff().effect.getComputedTiming().endTime;
   }
 
-  // Stops any flight, for leaving a mode.
+  // Shakes for a moment, then blows up in a cartoon burst of smoke and flying debris,
+  // leaving the pad empty until the next visit.
+  function explode() {
+    stopFlying();
+    ship.animate(SHAKE, { duration: WOBBLE_MS / 3, iterations: 3 });
+    boomTimer = setTimeout(() => {
+      Sound.boom();
+      puffSmoke();
+      Page.confetti(ship, DEBRIS);
+      ship.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.3)" }], {
+        duration: 150,
+        fill: "forwards",
+      });
+
+      const box = ship.getBoundingClientRect();
+      const size = Math.max(box.width, box.height) * 1.3;
+      boomEl.style.width = `${size}px`;
+      boomEl.style.left = `${box.left + box.width / 2 - size / 2}px`;
+      boomEl.style.top = `${box.top + box.height / 2 - size / 2}px`;
+      boomEl.animate(
+        [
+          { transform: "scale(0) rotate(-20deg)", opacity: 1 },
+          { transform: "scale(1) rotate(0deg)", opacity: 1, offset: 0.25 },
+          { transform: "scale(1.1) rotate(5deg)", opacity: 1, offset: 0.7 },
+          { transform: "scale(1.2) rotate(8deg)", opacity: 0 },
+        ],
+        { duration: 1200, easing: "ease-out" },
+      );
+    }, WOBBLE_MS);
+  }
+
+  // Stops any flight or explosion, for leaving a mode.
   function stop() {
+    clearTimeout(boomTimer);
+    boomEl.getAnimations().forEach((a) => a.cancel());
     stopFlying();
     craftEl.classList.remove("lit");
   }
@@ -227,7 +268,7 @@ const Craft = (() => {
   }
 
   // Each booster's flame goes out, then it peels away sideways and tumbles outward,
-  // falling behind the climbing core stage as it fades.
+  // falling behind the climbing core stage, and fades only near the end.
   function dropBoosters() {
     const timing = { delay: BOOSTERS_OFF_MS, fill: "forwards" };
     ship.querySelectorAll(".booster").forEach((booster) => {
@@ -239,9 +280,10 @@ const Craft = (() => {
       booster.animate(
         [
           { transform: "translate(0, 0) rotate(0deg)", opacity: 1 },
-          { transform: `translate(${side * 40}px, 260px) rotate(${side * 35}deg)`, opacity: 0 },
+          { transform: `translate(${side * 40}px, 200px) rotate(${side * 30}deg)`, opacity: 1, offset: 0.6 },
+          { transform: `translate(${side * 70}px, 360px) rotate(${side * 50}deg)`, opacity: 0 },
         ],
-        { ...timing, duration: TAKEOFF_MS - BOOSTERS_OFF_MS, easing: "ease-in" },
+        { ...timing, duration: ARTEMIS_MS - BOOSTERS_OFF_MS, easing: "ease-in" },
       );
     });
   }

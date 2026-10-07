@@ -8,7 +8,7 @@ const Sound = (() => {
   let audio = null;
   let uhOhUntil = 0; // audio time when the current "uh-oh" finishes
 
-  return { SCALE, wake, stop, chime, fanfare, uhOh, warble, rumble, chop, say };
+  return { SCALE, wake, stop, chime, fanfare, uhOh, warble, rumble, chop, boom, say };
 
   // Browsers only allow audio after a key press or click, so start it lazily.
   function wake() {
@@ -123,6 +123,24 @@ const Sound = (() => {
     source.start(t);
     flipper.start(t);
     flipper.stop(t + length);
+  }
+
+  // An explosion: a sudden crack of noise that rumbles down and away.
+  function boom(length = 1.6) {
+    if (!audio) return;
+    const t = audio.currentTime;
+    const source = noise(length);
+    const filter = audio.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(2500, t);
+    filter.frequency.exponentialRampToValueAtTime(300, t + length);
+    const gain = audio.createGain();
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(2, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
+
+    source.connect(filter).connect(gain).connect(audio.destination);
+    source.start(t);
   }
 
   function noise(length) {
