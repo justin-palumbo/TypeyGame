@@ -246,6 +246,21 @@
       transform-origin: center;
     }
 
+    /* The lander's ascent engine stays off until its top stage lifts off (craft.js lights it). */
+    .ascent-flame,
+    .ascent-flame > g {
+      transform-box: fill-box;
+      transform-origin: 50% 0;
+    }
+
+    .ascent-flame {
+      transform: scale(0);
+    }
+
+    .ascent-flame > g {
+      animation: flicker 0.12s ease-in-out infinite alternate;
+    }
+
     /* Propellers and rotors, seen from the side, spin by squashing back and forth. */
     .blade-x,
     .blade-y {
@@ -728,8 +743,8 @@
           <path fill="#ffd23f" d="M55 238 C54 254 61 262 65 274 C69 262 76 254 75 238 Z" />
         </g>
 
-        <g class="booster" data-side="left">
-          <g class="flame">
+        <g class="booster" data-side="left" data-moves>
+          <g class="flame" data-moves>
             <path class="outline" fill="#ff8c42" d="M20 238 C18 262 28 274 31 296 C34 274 44 262 42 238 Z" />
             <path fill="#ffd23f" d="M25 238 C24 254 29 262 31 274 C33 262 38 254 37 238 Z" />
           </g>
@@ -739,8 +754,8 @@
           <path fill="none" stroke="#adb5bd" stroke-width="2.5" d="M24 146 H38 M24 186 H38" />
           <path class="outline" fill="#dee2e6" d="M21 226 H41 L44 238 H18 Z" />
         </g>
-        <g class="booster" data-side="right">
-          <g class="flame">
+        <g class="booster" data-side="right" data-moves>
+          <g class="flame" data-moves>
             <path class="outline" fill="#ff8c42" d="M88 238 C86 262 96 274 99 296 C102 274 112 262 110 238 Z" />
             <path fill="#ffd23f" d="M93 238 C92 254 97 262 99 274 C101 262 106 254 105 238 Z" />
           </g>
@@ -883,12 +898,21 @@
         <ellipse class="outline" cx="130" cy="130" rx="10" ry="4" fill="#adb5bd" />
         <path class="outline" fill="#868e96" d="M60 98 H80 L86 112 H54 Z" />
 
-        <path class="outline" fill="none" d="M100 22 L108 8" />
-        <circle class="outline" cx="109" cy="7" r="4" fill="#ffffff" style="stroke-width: 3" />
-        <path class="outline" fill="#dee2e6" d="M40 22 H100 L112 40 V62 H28 V40 Z" />
-        <rect class="outline" x="56" y="32" width="28" height="18" rx="6" fill="#a0e7ff" />
+        <!-- The ascent stage: the only part that leaves, on its own small engine (see craft.js). -->
+        <g class="ascent" data-moves>
+          <g class="ascent-flame" data-moves>
+            <g>
+              <path class="outline" fill="#ff8c42" d="M60 62 C58 76 66 84 70 96 C74 84 82 76 80 62 Z" />
+              <path fill="#ffd23f" d="M65 62 C64 72 68 78 70 86 C72 78 76 72 75 62 Z" />
+            </g>
+          </g>
+          <path class="outline" fill="none" d="M100 22 L108 8" />
+          <circle class="outline" cx="109" cy="7" r="4" fill="#ffffff" style="stroke-width: 3" />
+          <path class="outline" fill="#dee2e6" d="M40 22 H100 L112 40 V62 H28 V40 Z" />
+          <rect class="outline" x="56" y="32" width="28" height="18" rx="6" fill="#a0e7ff" />
+        </g>
 
-        <!-- The gold descent stage is the fuel tank. -->
+        <!-- The gold descent stage is the fuel tank. It stays behind on the pad. -->
         <use href="#descent" fill="#fbe8a6" />
         <g data-fuel clip-path="url(#descent-clip)"></g>
         <use class="outline" href="#descent" fill="none" />

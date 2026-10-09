@@ -17,13 +17,15 @@ const Craft = (() => {
   const TAKEOFF_MS = 2200; // how long most takeoffs take; modes wait for launch() to finish
   const ARTEMIS_MS = 3800; // Artemis I climbs slower, so its boosters' fall is easy to see
   const BOOSTERS_OFF_MS = 2200; // when Artemis I drops its boosters, about a quarter of the way up
+  const ASCENT_MS = 3200; // the lander's top stage rises a little slower than most takeoffs
   const WOBBLE_MS = 600; // how long a craft shakes before it explodes
   const DEBRIS = ["#ff595e", "#ff8c42", "#ffd23f", "#495057", "#adb5bd", "#ffffff"];
 
   // How each craft lands and takes off. Both return the animation that moves #craft;
   // tilts and wobbles go on the ship itself, so the two combine.
   // Left-facing craft (plane, helicopter, blimp) tip their nose up with a positive tilt.
-  // `rollsIn` craft arrive along the ground with their engines off.
+  // `rollsIn` craft arrive along the ground with their engines off; `leavesBase` craft take
+  // off without their main engine, because only their top stage leaves.
   const FLIGHTS = {
     // Rolls out to the pad (it can't land: its boosters are gone), then lifts off on every
     // engine, climbs slowly, and drops its two side boosters partway up, like the real Artemis I.
@@ -118,14 +120,25 @@ const Craft = (() => {
         return fly([{ ...ON_PAD, easing: "ease-in" }, at("-4vw", "-8vh", { offset: 0.35, easing: "ease-in" }), at("-50vw", "-115vh")]);
       },
     },
-    // Slow down, hover just above the ground, then set down.
+    // Slow down, hover just above the ground, then set down on the descent engine.
     lander: {
       land: () => fly([{ ...IN_SPACE, easing: "ease-out" }, at(0, "-6vh", { offset: 0.7, easing: "ease-in-out" }), ON_PAD], 1600),
-      // No smoke: there's no air on the moon.
+      // Like the real ones, only the top (ascent) stage leaves, on its own small engine.
+      // The gold descent stage stays on the pad. No smoke: there's no air on the moon.
+      leavesBase: true,
       takeOff: () => {
-        Sound.rumble(TAKEOFF_MS / 1000, 500, 1300);
-        ship.animate(SHAKE, { duration: 400 });
-        return fly([ON_PAD, { ...ON_PAD, offset: 0.18, easing: SPEED_UP }, IN_SPACE]);
+        Sound.rumble(ASCENT_MS / 1000, 500, 1300);
+        ship.querySelector(".ascent-flame").animate([{ transform: "scale(0)" }, { transform: "scale(1)" }], {
+          duration: 200,
+          fill: "forwards",
+        });
+        // Far enough up, in the drawing's own units, for the stage to clear the top of the screen.
+        const box = ship.getBoundingClientRect();
+        const rise = (box.bottom / box.height) * ship.viewBox.baseVal.height + 10;
+        return ship.querySelector(".ascent").animate(
+          [ON_PAD, { ...ON_PAD, offset: 0.15, easing: SPEED_UP }, at(0, `${-rise}px`)],
+          { duration: ASCENT_MS, fill: "forwards" },
+        );
       },
     },
   };
@@ -171,8 +184,9 @@ const Craft = (() => {
   // Returns how long the takeoff lasts, in ms, so modes can wait for it to finish.
   function launch() {
     stopFlying();
-    craftEl.classList.add("lit");
-    return FLIGHTS[ship.dataset.name].takeOff().effect.getComputedTiming().endTime;
+    const flight = FLIGHTS[ship.dataset.name];
+    craftEl.classList.toggle("lit", !flight.leavesBase);
+    return flight.takeOff().effect.getComputedTiming().endTime;
   }
 
   // Shakes for a moment, then blows up in a cartoon burst of smoke and flying debris,
@@ -246,10 +260,10 @@ const Craft = (() => {
     ship.querySelector("[data-fuel]").replaceChildren(...fuelEls);
   }
 
-  // Stop any flight in progress, including tilts on the ship itself, and put back any
-  // boosters that fell away.
+  // Stop any flight in progress, including tilts on the ship itself, and put back any parts
+  // that moved on their own (marked data-moves): Artemis I's boosters, the lander's ascent stage.
   function stopFlying() {
-    [craftEl, ship, ...ship.querySelectorAll(".booster, .booster .flame")].forEach((el) =>
+    [craftEl, ship, ...ship.querySelectorAll("[data-moves]")].forEach((el) =>
       el.getAnimations().forEach((a) => a.cancel()));
   }
 
